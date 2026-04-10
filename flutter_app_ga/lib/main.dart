@@ -24,7 +24,7 @@ class MyApp extends StatelessWidget {
         useMaterial3: true,
       ),
       // แก้ไขบรรทัดนี้: เปลี่ยนจาก MyHomePage เป็นชื่อ Class ในไฟล์ graph_page
-      home: WattGraphPage(), 
+      home: WattDashboardPage(), 
     );
   }
 }
