@@ -1,0 +1,25 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Watt Monitor (Chrome)",
+      "program": "flutter_app_ga/lib/main.dart",
+      "request": "launch",
+      "type": "dart",
+      "args": [
+        "-d",
+        "chrome"
+      ]
+    },
+    {
+      "name": "Watt Monitor (Windows)",
+      "program": "flutter_app_ga/lib/main.dart",
+      "request": "launch",
+      "type": "dart",
+      "args": [
+        "-d",
+        "windows"
+      ]
+    }
+  ]
+}
