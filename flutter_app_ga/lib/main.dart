@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
-import 'graph_page.dart'; // ดึงไฟล์กราฟมาแล้ว
+import 'graph_page.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -17,14 +17,13 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      debugShowCheckedModeBanner: false, // ปิดแถบ Debug มุมขวา
+      debugShowCheckedModeBanner: false,
       title: 'Watt Monitor',
       theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.orange),
+        colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF4040C0)),
         useMaterial3: true,
       ),
-      // แก้ไขบรรทัดนี้: เปลี่ยนจาก MyHomePage เป็นชื่อ Class ในไฟล์ graph_page
-      home: WattDashboardPage(), 
+      home: const WattDashboardPage(),
     );
   }
 }
