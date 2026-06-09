@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>บทที่ 3 วิธีดำเนินการวิจัย - ส่วนติดต่อผู้ใช้งาน (UI)</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Prompt:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #f8fafc;
+            --card-bg: #ffffff;
+            --primary-color: #4f46e5;
+            --text-color: #1e293b;
+            --text-muted: #64748b;
+            --border-color: #e2e8f0;
+            --code-bg: #0f172a;
+            --code-text: #f8f8f2;
+        }
+
+        body {
+            font-family: 'Prompt', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            line-height: 1.8;
+            margin: 0;
+            padding: 40px 20px;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: var(--card-bg);
+            padding: 50px;
+            border-radius: 16px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+            border: 1px solid var(--border-color);
+        }
+
+        h1 {
+            font-size: 2.2rem;
+            color: var(--primary-color);
+            margin-top: 0;
+            border-bottom: 3px solid var(--primary-color);
+            padding-bottom: 15px;
+            font-weight: 700;
+        }
+
+        h2 {
+            font-size: 1.6rem;
+            color: #334155;
+            margin-top: 30px;
+            font-weight: 600;
+        }
+
+        h3 {
+            font-size: 1.3rem;
+            color: #475569;
+            margin-top: 25px;
+            border-left: 4px solid var(--primary-color);
+            padding-left: 10px;
+            font-weight: 600;
+        }
+
+        h4 {
+            font-size: 1.1rem;
+            color: #4f46e5;
+            margin-top: 20px;
+            font-weight: 600;
+        }
+
+        p, li {
+            font-size: 1.05rem;
+            font-weight: 300;
+        }
+
+        hr {
+            border: 0;
+            height: 1px;
+            background: var(--border-color);
+            margin: 40px 0;
+        }
+
+        code {
+            font-family: 'Fira Code', 'Courier New', Courier, monospace;
+            background-color: #f1f5f9;
+            color: #ef4444;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 0.95em;
+        }
+
+        pre {
+            background-color: var(--code-bg);
+            color: var(--code-text);
+            padding: 20px;
+            border-radius: 8px;
+            overflow-x: auto;
+            border: 1px solid #1e293b;
+            margin: 15px 0;
+        }
+
+        pre code {
+            background-color: transparent;
+            color: inherit;
+            padding: 0;
+            border-radius: 0;
+            font-size: 0.9em;
+        }
+
+        ul {
+            padding-left: 20px;
+        }
+
+        li {
+            margin-bottom: 8px;
+        }
+
+        .diagram-box {
+            background: #f1f5f9;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 20px;
+            text-align: center;
+            font-family: 'Prompt', sans-serif;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>บทที่ 3 วิธีดำเนินการวิจัย (Methodology)</h1>
+        <h2>ส่วนการออกแบบและพัฒนาส่วนติดต่อผู้ใช้งาน (User Interface Design and Development)</h2>
+        
+        <p>การพัฒนาส่วนติดต่อผู้ใช้งาน (User Interface: UI) ของแอพพลิเคชัน <strong>Watt Monitor</strong> (ระบบติดตามค่ากำลังไฟฟ้าและกระแสไฟฟ้าแบบเรียลไทม์) พัฒนาขึ้นด้วยเฟรมเวิร์ก Flutter (ภาษา Dart) โดยเน้นสถาปัตยกรรมแบบคอมโพเนนต์ (Component-based Architecture) ที่แบ่งหน้าจอและวิดเจ็ตออกเป็นส่วนย่อย ๆ เพื่อความสะดวกในการบำรุงรักษาและการนำกลับมาใช้ใหม่ (Reusable Widgets)</p>
+        
+        <hr>
+
+        <h3>3.1 โครงสร้างและการจัดวางหน้าจอหลัก (Main Screen Architecture)</h3>
+        <p>โครงสร้างหน้าจอถูกควบคุมโดยคลาส <code>WattDashboardPage</code> (ในไฟล์ <code>graph_page.dart</code>) ซึ่งเป็น <code>StatefulWidget</code> ทำหน้าที่เป็นผู้ประสานงานหลักในการจัดโครงสร้างหน้าและการสลับมุมมองระหว่าง <strong>หน้าหลัก (Dashboard)</strong> และ <strong>หน้าประวัติ (History List)</strong> โดยใช้โครงร่างโครงสร้างแบบชั้น (Layered Layout) ร่วมกับ <code>Scaffold</code> ดังนี้:</p>
+        <ul>
+            <li><strong>ส่วนบน (TopBar)</strong>: แสดงโลโก้ ชื่อแอพพลิเคชัน (Energy Monitor) และปุ่มเปลี่ยนโหมดกลางคืน (Dark Mode Toggle)</li>
+            <li><strong>ส่วนกลาง (Body)</strong>: เปลี่ยนมุมมองตามแท็บนำทางที่เลือก (Navigation Index):
+                <ul>
+                    <li><strong>Dashboard View</strong>: แสดงแผงควบคุมหลัก ได้แก่ การ์ดกำลังไฟฟ้าแบบเรียลไทม์ กราฟเส้นแนวโน้มการใช้ไฟ และตารางประวัติกิจกรรมชั่วโมงต่อชั่วโมง</li>
+                    <li><strong>History View</strong>: แสดงรายการประวัติวันที่สามารถเลือกดูย้อนหลังได้ โดยดึงข้อมูลจาก Firebase Realtime Database</li>
+                </ul>
+            </li>
+            <li><strong>ส่วนล่าง (BottomNav)</strong>: แถบนำทางด้านล่างสำหรับการสลับมุมมองระหว่าง หน้าหลัก (หน้าแรก) และ ประวัติ</li>
+        </ul>
+
+        <hr>
+
+        <h3>3.2 รายละเอียดการทำงานและการเชื่อมต่อส่วนเก็บข้อมูลหลัก (Core Integration)</h3>
+        
+        <h4>3.2.1 การเริ่มต้นระบบและการเชื่อมต่อ Firebase (Firebase Initialization)</h4>
+        <p>แอพพลิเคชันจะเริ่มต้นสถาปัตยกรรมผ่านฟังก์ชันหลัก <code>main()</code> ในไฟล์ <code>main.dart</code> โดยทำการเริ่มต้นการเชื่อมต่อแบบอะซิงโครนัส (Asynchronous) เข้ากับ Firebase เพื่อเตรียมความพร้อมสำหรับการทำ Data Streaming:</p>
+        
+        <pre><code>// โค้ดส่วนการเริ่มต้นระบบและการเชื่อมต่อกับ Firebase (main.dart)
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
+  runApp(const MyApp());
+}</code></pre>
+
+        <h4>3.2.2 การดึงข้อมูลและเชื่อมโยงข้อมูลแบบเรียลไทม์ (Firebase Realtime Stream Integration)</h4>
+        <p>ระบบใช้โครงสร้าง <code>StreamBuilder</code> ในคลาส <code>_WattDashboardPageState</code> (ในไฟล์ <code>graph_page.dart</code>) เพื่อสมัครรับข้อมูล (Subscribe) จากตำแหน่ง <code>history</code> บน Firebase Realtime Database ทำให้หน้าจอแอพพลิเคชันสามารถรีเรนเดอร์ตัวเองใหม่โดยอัตโนมัติทันทีที่มีการเปลี่ยนแปลงข้อมูลจากฝั่งฮาร์ดแวร์:</p>
+
+        <pre><code>// โค้ดส่วนดึงข้อมูลประวัติและค่าเรียลไทม์จาก Firebase Realtime Database (graph_page.dart)
+class _WattDashboardPageState extends State&lt;WattDashboardPage&gt; {
+  // การกำหนดตำแหน่งอ้างอิงของโฟลเดอร์ใน Database
+  final DatabaseReference _historyRef = FirebaseDatabase.instance.ref('history');
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: AppColors.bg,
+      body: SafeArea(
+        child: StreamBuilder(
+          stream: _historyRef.onValue, // เชื่อมโยง Stream จาก Firebase
+          builder: (context, snapshot) {
+            // เมื่อได้รับข้อมูลจาก Firebase สำเร็จ
+            if (snapshot.hasData &amp;&amp; snapshot.data!.snapshot.value != null) {
+              final raw = snapshot.data!.snapshot.value as Map;
+              
+              // ดึงคีย์ข้อมูลวันที่ทั้งหมดเพื่อแสดงผลในรายการประวัติ
+              availableDates = raw.keys.map((e) =&gt; e.toString()).toList();
+              availableDates.sort((a, b) =&gt; b.compareTo(a)); // เรียงลำดับวันล่าสุดขึ้นก่อน
+              
+              // ... ขั้นตอนการคำนวณและแปลงค่ากำลังไฟฟ้าเพื่อส่งต่อไปยัง Widget อื่น ๆ ...
+            }
+            // ...
+          },
+        ),
+      ),
+    );
+  }
+}</code></pre>
+
+        <hr>
+
+        <h3>3.3 รายละเอียดการออกแบบและโครงสร้างโค้ดของวิดเจ็ตย่อย (UI Component Breakdown)</h3>
+
+        <h4>3.3.1 TopBar (แถบเมนูด้านบน)</h4>
+        <p>ทำหน้าที่แสดงชื่อระบบและสลับสถานะสีธีมผ่านตัวแปร <code>onToggleTheme</code> ที่เชื่อมกับสถานะหน้าจอหลัก</p>
+
+        <h4>3.3.2 PowerCard (การ์ดแสดงผลค่ากำลังไฟฟ้าหลัก)</h4>
+        <p>แสดงค่ากำลังไฟฟ้าหลัก (วัตต์ และ แอมป์) พร้อมระบบแปลงรูปแบบการแสดงผลวันที่ที่กำลังถูกดึงข้อมูลจากค่าเริ่มต้นของเซสชันหรือค่าที่ดึงมาจากฐานข้อมูล:</p>
+
+        <pre><code>// โค้ดส่วนการรับข้อมูลและแปลงแสดงผลการ์ดหลัก (power_card.dart)
+class PowerCard extends StatelessWidget {
+  final String watt;
+  final String amp;
+  final String dateStr; // รับค่าวันที่ในรูปแบบ YYYY-MM-DD
+  final bool dayView;
+
+  // ...
+
+  @override
+  Widget build(BuildContext context) {
+    // การแปลงรูปแบบวันที่ YYYY-MM-DD ให้เป็นสากล D/M/Y
+    final parts = dateStr.split('-');
+    final formattedDate = parts.length == 3 ? '${parts[2]}/${parts[1]}/${parts[0]}' : dateStr;
+
+    return Container(
+      // ... การกำหนดสไตล์โครงสร้างการจัดวาง ...
+      child: Column(
+        children: [
+          Text(
+            dayView ? formattedDate : 'Last 7 Days', // แสดงวันที่ในฟอร์แมต D/M/Y ที่แปลงแล้ว
+            style: TextStyle(fontSize: 11, color: AppColors.textMuted),
+          ),
+          // ... แสดงค่ากำลังไฟฟ้าและกระแสไฟฟ้า ...
+        ],
+      ),
+    );
+  }
+}</code></pre>
+
+        <h4>3.3.3 TrendChart (กราฟแนวโน้มแสดงผลการใช้พลังงาน)</h4>
+        <p>ใช้โมดูลกราฟของ <code>fl_chart</code> ในการแสดงแนวโน้มแบบเส้นเชื่อมความหนา 3.5 และใช้โครงร่างความโปร่งใสแบบไล่โทนสี (Gradient) แสดงผลข้อมูลได้ทั้งแบบ Day (ข้อมูลชั่วโมงต่อชั่วโมง) และ Week (ข้อมูลแบบ 7 วันล่าสุด)</p>
+
+        <h4>3.3.4 ActivityLogs (ส่วนแสดงประวัติกิจกรรมเชิงลึก)</h4>
+        <p>มีลอจิกแปลงรูปแบบช่วงวันที่ในการแสดงบันทึกแบบแถวรายการย้อนหลังหากมองผ่านมุมมองรายสัปดาห์:</p>
+
+        <pre><code>// โค้ดส่วนแยกการจัดแสดงผลวันที่กิจกรรมรายวัน (activity_logs.dart)
+if (dayView) {
+  subStr = '${data.hour.toString().padLeft(2, '0')}:00';
+} else {
+  final idx = data.hour;
+  if (idx &gt;= 0 &amp;&amp; idx &lt; weekLabels.length) {
+    final parts = weekLabels[idx].split('-');
+    // แปลงรูปแบบคีย์ฐานข้อมูล YYYY-MM-DD ในแต่ละจุดแกนข้อมูลให้ออกเป็น D/M/Y
+    subStr = parts.length == 3 ? '${parts[2]}/${parts[1]}/${parts[0]}' : weekLabels[idx];
+  }
+}</code></pre>
+
+        <h4>3.3.5 HistoryList (ส่วนรายการประวัติการตรวจสอบย้อนหลัง)</h4>
+        <p>แสดงรายการคีย์ประวัติวันที่ที่นำมาเรียงเป็นปุ่มกด โดยลอจิกการแปลงรูปแบบจะแปลงก่อนส่งเข้าวาดข้อความเพื่อความสะดวกของมนุษย์ และส่งคีย์ดั้งเดิมกลับไปประมวลผลผ่าน <code>onDateSelected</code>:</p>
+
+        <pre><code>// โค้ดส่วนแสดงผลรายการประวัติย้อนหลัง (history_list.dart)
+class HistoryList extends StatelessWidget {
+  final List<String> dates;
+  final String? selectedDate;
+  final ValueChanged<String> onDateSelected;
+
+  // ...
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView.builder(
+      itemCount: dates.length,
+      itemBuilder: (context, i) {
+        final date = dates[i];
+        final isSelected = date == (selectedDate ?? (dates.isNotEmpty ? dates.first : ''));
+        
+        // แยกส่วนคีย์ความปลอดภัย YYYY-MM-DD ออกเป็น D/M/Y
+        final parts = date.split('-');
+        final formattedDate = parts.length == 3 ? '${parts[2]}/${parts[1]}/${parts[0]}' : date;
+
+        return GestureDetector(
+          onTap: () =&gt; onDateSelected(date), // ส่งคีย์ดั้งเดิม YYYY-MM-DD กลับไปคิวรี Firebase
+          child: Container(
+            // ...
+            child: Text(
+              formattedDate, // แสดงผลวันที่ในหน้าจอเป็น D/M/Y 
+              style: TextStyle(
+                // ...
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+}</code></pre>
+    </div>
+</body>
+</html>
