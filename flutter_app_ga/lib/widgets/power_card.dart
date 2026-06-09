@@ -17,6 +17,8 @@ class PowerCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final parts = dateStr.split('-');
+    final formattedDate = parts.length == 3 ? '${parts[2]}/${parts[1]}/${parts[0]}' : dateStr;
     return Container(
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
@@ -38,7 +40,7 @@ class PowerCard extends StatelessWidget {
           ),
           const SizedBox(height: 2),
           Text(
-            dayView ? dateStr : 'Last 7 Days',
+            dayView ? formattedDate : 'Last 7 Days',
             style: TextStyle(fontSize: 11, color: AppColors.textMuted),
           ),
           const SizedBox(height: 12),

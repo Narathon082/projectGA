@@ -24,6 +24,8 @@ class HistoryList extends StatelessWidget {
       itemBuilder: (context, i) {
         final date = dates[i];
         final isSelected = date == (selectedDate ?? (dates.isNotEmpty ? dates.first : ''));
+        final parts = date.split('-');
+        final formattedDate = parts.length == 3 ? '${parts[2]}/${parts[1]}/${parts[0]}' : date;
         return GestureDetector(
           onTap: () => onDateSelected(date),
           child: Container(
@@ -42,7 +44,7 @@ class HistoryList extends StatelessWidget {
                     Icon(Icons.calendar_month_rounded, color: isSelected ? AppColors.primary : AppColors.textSub, size: 20),
                     const SizedBox(width: 12),
                     Text(
-                      date, 
+                      formattedDate, 
                       style: TextStyle(
                         fontSize: 15, 
                         fontWeight: isSelected ? FontWeight.bold : FontWeight.w600, 
