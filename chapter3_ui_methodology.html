@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>บทที่ 3 วิธีดำเนินการวิจัย - ส่วนติดต่อผู้ใช้งาน (UI)</title>
+    <title>บทที่ 3 วิธีดำเนินการวิจัย - ระบบวัดพลังงานไฟฟ้าแบบเรียลไทม์</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Prompt:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
@@ -12,6 +12,7 @@
             --bg-color: #f8fafc;
             --card-bg: #ffffff;
             --primary-color: #4f46e5;
+            --secondary-color: #10b981;
             --text-color: #1e293b;
             --text-muted: #64748b;
             --border-color: #e2e8f0;
@@ -29,7 +30,7 @@
         }
 
         .container {
-            max-width: 900px;
+            max-width: 950px;
             margin: 0 auto;
             background: var(--card-bg);
             padding: 50px;
@@ -117,27 +118,479 @@
             margin-bottom: 8px;
         }
 
-        .diagram-box {
-            background: #f1f5f9;
-            border: 1px solid var(--border-color);
-            border-radius: 8px;
-            padding: 20px;
-            text-align: center;
-            font-family: 'Prompt', sans-serif;
+        img.diagram-img {
+            max-width: 100%;
+            height: auto;
+            border: 1.5px solid var(--border-color);
+            border-radius: 12px;
             margin: 20px 0;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.04);
+            display: block;
+        }
+
+        /* Hardware specs table */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+
+        th, td {
+            border: 1px solid var(--border-color);
+            padding: 12px 15px;
+            text-align: left;
+        }
+
+        th {
+            background-color: #f1f5f9;
+            color: #334155;
+            font-weight: 600;
+        }
+
+        td {
+            font-weight: 300;
+        }
+
+        /* Flowchart visual styles */
+        .flowchart-container {
+            background: #f8fafc;
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 30px 20px;
+            margin: 30px 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .flow-node {
+            background: var(--card-bg);
+            border: 2px solid var(--primary-color);
+            border-radius: 8px;
+            padding: 10px 18px;
+            font-size: 0.95rem;
+            font-weight: 500;
+            text-align: center;
+            min-width: 250px;
+            max-width: 400px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.02);
+            margin: 2px 0;
+        }
+
+        .flow-node.start {
+            background: var(--primary-color);
+            color: white;
+            border-radius: 30px;
+            font-weight: 600;
+            border: none;
+        }
+
+        .flow-node.hardware {
+            border-color: #eab308;
+            background: #fef9c3;
+        }
+
+        .flow-node.database {
+            border-color: #f97316;
+            background: #ffedd5;
+            border-radius: 4px;
+        }
+
+        .flow-node.decision {
+            background: #eff6ff;
+            border-color: #3b82f6;
+            border-radius: 16px;
+        }
+
+        .flow-node.action-green {
+            border-color: var(--secondary-color);
+            background: #f0fdf4;
+        }
+
+        .flow-arrow {
+            font-size: 20px;
+            color: var(--text-muted);
+            margin: 6px 0;
+        }
+
+        .flow-row {
+            display: flex;
+            justify-content: center;
+            gap: 40px;
+            width: 100%;
+            margin: 10px 0;
+        }
+
+        .flow-col {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            flex: 1;
+        }
+
+        .branch-label {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            margin-bottom: 4px;
+            font-weight: 500;
+        }
+
+        /* Architecture Diagram Styles */
+        .arch-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #f8fafc;
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 25px;
+            margin: 25px 0;
+        }
+
+        .arch-block {
+            background: white;
+            border: 2px solid var(--border-color);
+            border-radius: 8px;
+            padding: 12px;
+            text-align: center;
+            width: 130px;
+            font-size: 0.85rem;
+            font-weight: 500;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.02);
+        }
+
+        .arch-block.hw {
+            border-color: #eab308;
+            background: #fef9c3;
+        }
+
+        .arch-block.db {
+            border-color: #f97316;
+            background: #ffedd5;
+        }
+
+        .arch-block.app {
+            border-color: var(--primary-color);
+            background: #eff6ff;
+        }
+
+        .arch-arrow {
+            font-size: 1.5rem;
+            color: var(--text-muted);
+            font-weight: bold;
+        }
+
+        /* Use Case Diagram Styles */
+        .usecase-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: stretch;
+            background: #faf5ff;
+            border: 1px solid #e9d5ff;
+            border-radius: 16px;
+            padding: 30px;
+            margin: 30px 0;
+            gap: 20px;
+        }
+
+        .usecase-actor {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            width: 180px;
+            border: 2px solid var(--border-color);
+            border-radius: 12px;
+            background: white;
+            padding: 20px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.02);
+            text-align: center;
+        }
+
+        .usecase-actor.user {
+            border-color: var(--primary-color);
+            background: #eff6ff;
+        }
+
+        .usecase-actor.hw {
+            border-color: #eab308;
+            background: #fef9c3;
+        }
+
+        .actor-icon {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+
+        .actor-name {
+            font-weight: 600;
+            font-size: 0.95rem;
+            color: #334155;
+        }
+
+        .usecase-system {
+            flex: 1;
+            border: 3px dashed #c084fc;
+            border-radius: 12px;
+            background: white;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            align-items: center;
+        }
+
+        .system-title {
+            font-size: 0.9rem;
+            font-weight: 700;
+            color: #a855f7;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 10px;
+            border-bottom: 2px solid #f3e8ff;
+            padding-bottom: 5px;
+            width: 100%;
+            text-align: center;
+        }
+
+        .usecase-pill {
+            background: #faf5ff;
+            border: 1.5px solid #d8b4fe;
+            border-radius: 20px;
+            padding: 8px 18px;
+            font-size: 0.88rem;
+            font-weight: 500;
+            color: #6b21a8;
+            text-align: center;
+            min-width: 80%;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+        }
+
+        .usecase-pill.hw-use {
+            background: #fffbeb;
+            border-color: #fde68a;
+            color: #92400e;
         }
     </style>
 </head>
 <body>
     <div class="container">
         <h1>บทที่ 3 วิธีดำเนินการวิจัย (Methodology)</h1>
-        <h2>ส่วนการออกแบบและพัฒนาส่วนติดต่อผู้ใช้งาน (User Interface Design and Development)</h2>
-        
-        <p>การพัฒนาส่วนติดต่อผู้ใช้งาน (User Interface: UI) ของแอพพลิเคชัน <strong>Watt Monitor</strong> (ระบบติดตามค่ากำลังไฟฟ้าและกระแสไฟฟ้าแบบเรียลไทม์) พัฒนาขึ้นด้วยเฟรมเวิร์ก Flutter (ภาษา Dart) โดยเน้นสถาปัตยกรรมแบบคอมโพเนนต์ (Component-based Architecture) ที่แบ่งหน้าจอและวิดเจ็ตออกเป็นส่วนย่อย ๆ เพื่อความสะดวกในการบำรุงรักษาและการนำกลับมาใช้ใหม่ (Reusable Widgets)</p>
+        <p>การดำเนินการวิจัยและพัฒนาระบบเริ่มต้นตั้งแต่การออกแบบส่วนฮาร์ดแวร์เพื่อตรวจวัดค่าพลังงานไฟฟ้าและจัดส่งข้อมูลขึ้นสู่ระบบคลาวด์ ตลอดจนการพัฒนาส่วนหน้าจอแสดงผลบนโมบายแอพพลิเคชันเพื่อการติดตามผลแบบเรียลไทม์ โดยแบ่งรายละเอียดการทำงานออกเป็นส่วนต่าง ๆ ดังนี้:</p>
         
         <hr>
 
-        <h3>3.1 โครงสร้างและการจัดวางหน้าจอหลัก (Main Screen Architecture)</h3>
+        <h3>3.1 ส่วนการทำงานและรายละเอียดอุปกรณ์ฮาร์ดแวร์ (Hardware Details and Specifications)</h3>
+        <p>การตรวจวัดปริมาณกระแสไฟฟ้าและกำลังไฟฟ้าจริงจำต้องอาศัยฮาร์ดแวร์ (Hardware Core) ที่มีความแม่นยำสูง เชื่อมต่อผ่านระบบเซ็นเซอร์และการประมวลผลของไมโครคอนโทรลเลอร์ โดยมีรายละเอียดโครงสร้างอุปกรณ์ดังนี้:</p>
+        
+        <table>
+            <thead>
+                <tr>
+                    <th style="width: 25%;">อุปกรณ์ (Component)</th>
+                    <th style="width: 35%;">รุ่น / ข้อมูลจำเพาะ (Model / Specs)</th>
+                    <th style="width: 40%;">บทบาทหน้าที่ในระบบ (Role in System)</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>ไมโครคอนโทรลเลอร์ (MCU)</strong></td>
+                    <td>ESP32 DevKit V1 (Tensilica 32-bit LX6, 240 MHz, SRAM 520 KB, Flash 4 MB, Wi-Fi 2.4 GHz)</td>
+                    <td>เป็นสมองกลควบคุมหลัก ทำการประมวลผลข้อมูลจากเซ็นเซอร์ ดึงข้อมูลเวลาสากลจาก NTP Server และส่งข้อมูลขึ้นคลาวด์ Firebase แบบเรียลไทม์</td>
+                </tr>
+                <tr>
+                    <td><strong>โมดูลตรวจวัดค่าไฟฟ้า (AC Power Meter)</strong></td>
+                    <td>PZEM-004T v3.0 ร่วมกับ Split-Core Current Transformer (CT) ย่านวัดสูงสุด 100A</td>
+                    <td>ตรวจวัดค่าทางฟิสิกส์ไฟฟ้ากระแสสลับ (แรงดันไฟ V, กระแสไฟ A, กำลังไฟฟ้าจริง W, พลังงานสะสม Wh, ความถี่ Hz, Power Factor) สื่อสารผ่าน UART Modbus-RTU เข้าบอร์ด ESP32</td>
+                </tr>
+                <tr>
+                    <td><strong>เซ็นเซอร์กระแสไฟ (ทางเลือก)</strong></td>
+                    <td>ACS712 (Hall-Effect Direct) หรือ SCT-013-000 (Non-invasive Current Transformer 100A)</td>
+                    <td>ใช้ตรวจวัดกระแสไฟฟ้าไหลผ่านในกรณีไม่ใช้โมดูล PZEM-004T โดยส่งเอาต์พุตออกมาเป็นสัญญาณไฟฟ้าอะนาล็อก (Analog Signal)</td>
+                </tr>
+                <tr>
+                    <td><strong>โมดูลแปลงไฟเลี้ยง (Power Supply)</strong></td>
+                    <td>HLK-PM01 (AC 220V to DC 5V / 3W Switch-mode Module)</td>
+                    <td>แปลงไฟฟ้ากระแสสลับจากอาคารเป็นแรงดันกระแสตรง 5V เพื่อจ่ายไฟเลี้ยงแบบแยกอิสระให้กับบอร์ด ESP32 และเซ็นเซอร์ต่าง ๆ</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <hr>
+
+        <h3>3.2 ขั้นตอนการรับส่งข้อมูลทางกายภาพและระบบคลาวด์ (Data Transmission Flow)</h3>
+        <p>การจัดส่งข้อมูลแบ่งออกเป็นขั้นตอนดังภาพไดอะแกรมด้านล่าง:</p>
+
+        <!-- Architecture Diagram -->
+        <div class="arch-container">
+            <div class="arch-block hw">เครื่องใช้ไฟฟ้า</div>
+            <div class="arch-arrow">→</div>
+            <div class="arch-block hw">เซ็นเซอร์ PZEM-004T / ACS712</div>
+            <div class="arch-arrow">→</div>
+            <div class="arch-block hw">บอร์ด ESP32 + เวลาจาก NTP</div>
+            <div class="arch-arrow">→</div>
+            <div class="arch-block db">Firebase Realtime DB</div>
+            <div class="arch-arrow">→</div>
+            <div class="arch-block app">แอปพลิเคชัน Flutter (UI)</div>
+        </div>
+
+        <p>โดยมีขั้นตอนการทำงานคือ:</p>
+        <ol>
+            <li><strong>ตรวจวัด (Sensor Measurement)</strong>: เซ็นเซอร์วัดพารามิเตอร์พลังงานไฟฟ้าตามปริมาณการใช้งานจริง</li>
+            <li><strong>ดึงข้อมูลเวลาสากล (NTP Sync)</strong>: ESP32 เชื่อมต่อ Wi-Fi และดึงเวลาปัจจุบันทางอินเทอร์เน็ตเพื่อแปลงหา วันที่ (YYYY-MM-DD) และ ชั่วโมง (HH)</li>
+            <li><strong>ห่อหุ้มข้อมูลและส่งออก (Packaging & Upload)</strong>: แปลงค่าเป็นสตริงรูปแบบ JSON <code>{"watt": 120.5, "amp": 1.25}</code> แล้วจัดอัปโหลดขึ้น Firebase ไปยังพิกัด <code>history/YYYY-MM-DD/HH</code> แบบเรียลไทม์</li>
+        </ol>
+
+        <hr>
+
+        <h3>3.3 โครงสร้างข้อมูลบนคลาวด์ (Firebase Realtime Database Schema)</h3>
+        <p>การจัดเก็บข้อมูลบนฐานข้อมูลระบบคลาวด์ของ Firebase ออกแบบโครงสร้างในลักษณะลำดับชั้น <strong>JSON Tree</strong> ภายใต้ URL หลักของโครงการ <code>https://projectga-d3f20-default-rtdb.asia-southeast1.firebasedatabase.app/</code> เพื่อรองรับการสืบค้นข้อมูลตามวันเวลาและรองรับการดึงข้อมูลแบบสตรีมมิ่ง โดยมีรายละเอียดโครงสร้างข้อมูลดังนี้:</p>
+        
+        <ul>
+            <li><strong>โหนดหลัก (Root Node)</strong>: <code>history</code> - สารบัญหลักที่ใช้เก็บบันทึกประวัติพลังงานทั้งหมดของระบบ</li>
+            <li><strong>โหนดวันที่ (Date Key)</strong>: <code>YYYY-MM-DD</code> (เช่น <code>2026-05-30</code>, <code>2026-06-01</code>) - โหนดระดับที่สองใช้รูปแบบ วันที่ปัจจุบัน คั่นด้วยเครื่องหมายลบ เพื่อแยกแยะประวัติการใช้ไฟฟ้าในแต่ละวัน ทำหน้าที่เป็นดัชนี (Index) สำหรับคัดกรองวันที่ต้องการสืบค้นย้อนหลัง</li>
+            <li><strong>โหนดชั่วโมง (Hour Key)</strong>: <code>HH</code> (ช่วงค่าตัวเลขระหว่าง <code>0</code> ถึง <code>23</code> เช่น <code>8</code>, <code>10</code>) - โหนดระดับที่สามแยกแยะเวลาเป็นรายชั่วโมง โดยตัดเลข 0 ที่อยู่ข้างหน้าออกเพื่อความกระชับของชื่อคีย์และง่ายต่อการคิวรีประมวลผล</li>
+            <li><strong>ฟิลด์ข้อมูลพารามิเตอร์พลังงานไฟฟ้า (Data Fields)</strong>:
+                <ul>
+                    <li><code>amp</code>: ค่ากระแสไฟฟ้าเฉลี่ยในชั่วโมงนั้น (ชนิดข้อมูล: ทศนิยม Double, หน่วย: Ampere: A)</li>
+                    <li><code>watt</code>: ค่ากำลังไฟฟ้าจริงที่ใช้งานในชั่วโมงนั้น (ชนิดข้อมูล: จำนวนเต็ม/ทศนิยม, หน่วย: Watt: W)</li>
+                </ul>
+            </li>
+        </ul>
+
+        <h4>ตัวอย่างโครงสร้างข้อมูล JSON ที่จัดเก็บจริงใน Firebase Realtime Database:</h4>
+        <pre><code>{
+  "history": {
+    "2026-05-30": {
+      "8": {
+        "amp": 5.5,
+        "watt": 150
+      },
+      "10": {
+        "amp": 4.8,
+        "watt": 120
+      }
+    },
+    "2026-06-01": {
+      "9": {
+        "amp": 6.2,
+        "watt": 180
+      }
+    }
+  }
+}</code></pre>
+
+        <hr>
+
+        <h3>3.4 แผนผังการใช้งานระบบ (Use Case Diagram)</h3>
+        <p>แผนผัง Use Case แสดงบทบาทผู้ใช้งาน (Actors) และส่วนประกอบภายในกรอบขอบข่ายการทำงานของระบบ (System Boundary) ในระดับการนำเสนอและจัดหาข้อมูล:</p>
+
+        <!-- Image embed -->
+        <img class="diagram-img" src="use_case_diagram.png" alt="Use Case Diagram รูปภาพแผนภาพ Use Case">
+
+        <!-- Use Case visual diagram -->
+        <div class="usecase-container">
+            <div class="usecase-actor user">
+                <div class="actor-icon">👤</div>
+                <div class="actor-name">ผู้ใช้งานทั่วไป<br>(App User)</div>
+            </div>
+            
+            <div class="usecase-system">
+                <div class="system-title">ระบบติดตามพลังงานไฟฟ้า (Energy Monitor System)</div>
+                <div class="usecase-pill">ดูสถานะกำลังไฟและกระแสไฟเรียลไทม์</div>
+                <div class="usecase-pill">สลับมุมมองแนวโน้มรายวัน/รายสัปดาห์</div>
+                <div class="usecase-pill">ดูและค้นหาประวัติย้อนหลังตามวันที่</div>
+                <div class="usecase-pill">สลับโหมดสีหน้าจอแสดงผล (Theme)</div>
+                <div class="usecase-pill hw-use">วัดกระแสไฟและกำลังไฟฟ้าของโหลด</div>
+                <div class="usecase-pill hw-use">อัปโหลดข้อมูลประวัติขึ้นระบบคลาวด์แบบเรียลไทม์</div>
+            </div>
+            
+            <div class="usecase-actor hw">
+                <div class="actor-icon">⚙️</div>
+                <div class="actor-name">อุปกรณ์ฮาร์ดแวร์ไอโอที<br>(ESP32 Board)</div>
+            </div>
+        </div>
+
+        <hr>
+
+        <h3>3.5 แผนผังแสดงขั้นตอนการทำงานของระบบ (Application Working Flowchart)</h3>
+        <p>แผนผังขั้นตอนการทำงาน (Flowchart) ต่อไปนี้แสดงขั้นตอนการทำงานทั้งหมดของระบบ ตั้งแต่จุดเริ่มต้นฝั่งฮาร์ดแวร์ การส่งข้อมูล ตลอดจนระบบแสดงผลและการโต้ตอบในตัวแอปพลิเคชัน:</p>
+
+        <!-- Image embed -->
+        <img class="diagram-img" src="system_flowchart.png" alt="System Flowchart รูปภาพแผนภาพขั้นตอนการทำงาน">
+
+        <!-- Visual Flowchart HTML -->
+        <div class="flowchart-container">
+            <div class="flow-node start">เริ่มต้นฝั่งอุปกรณ์ฮาร์ดแวร์ (Hardware Start)</div>
+            <div class="flow-arrow">↓</div>
+            <div class="flow-node hardware">เซ็นเซอร์ตรวจวัดค่า Watt และ Amp ของเครื่องใช้ไฟฟ้า</div>
+            <div class="flow-arrow">↓</div>
+            <div class="flow-node hardware">ESP32 ซิงโครไนซ์เวลาปัจจุบันผ่าน NTP Server</div>
+            <div class="flow-arrow">↓</div>
+            <div class="flow-node hardware">จัดรูปแบบข้อมูล JSON และอัปโหลดผ่าน Wi-Fi</div>
+            <div class="flow-arrow">↓</div>
+            <div class="flow-node database">ฐานข้อมูล Firebase Realtime Database (รับ/บันทึกข้อมูล)</div>
+            <div class="flow-arrow">↓</div>
+            <div class="flow-node start" style="background-color: #6366f1;">เริ่มต้นฝั่งโมบายแอพพลิเคชัน (App Start)</div>
+            <div class="flow-arrow">↓</div>
+            <div class="flow-node">เริ่มต้นระบบและเชื่อมต่อ Firebase Core</div>
+            <div class="flow-arrow">↓</div>
+            <div class="flow-node">รับข้อมูลเรียลไทม์ผ่าน StreamBuilder (_historyRef.onValue)</div>
+            <div class="flow-arrow">↓</div>
+            <div class="flow-node decision">มีข้อมูลกลับมาจาก Firebase หรือไม่?</div>
+            
+            <div class="flow-row">
+                <div class="flow-col">
+                    <span class="branch-label">ไม่ใช่/ว่าง</span>
+                    <div class="flow-node" style="border-color: #ef4444; background: #fef2f2;">แสดงข้อความ "Waiting for data..."</div>
+                </div>
+                <div class="flow-col">
+                    <span class="branch-label">ใช่</span>
+                    <div class="flow-node">ดึงรายการข้อมูลวันที่ทั้งหมด & เรียงลำดับจากใหม่สุด</div>
+                </div>
+            </div>
+
+            <div class="flow-arrow" style="margin-left: 290px;">↓</div>
+            <div class="flow-node" style="margin-left: 290px;">ระบุวันที่สำหรับแสดงผล (displayDate)</div>
+            <div class="flow-arrow" style="margin-left: 290px;">↓</div>
+            <div class="flow-node decision" style="margin-left: 290px;">ผู้ใช้เลือกมุมมองแบบใด?</div>
+
+            <div class="flow-row">
+                <div class="flow-col">
+                    <span class="branch-label">รายชั่วโมง (Day View)</span>
+                    <div class="flow-node action-green">ดึงประวัติรายชั่วโมงของวันที่เลือก<br>เตรียมส่งข้อมูลเป็นกราฟและตารางรายการ</div>
+                </div>
+                <div class="flow-col">
+                    <span class="branch-label">รายสัปดาห์ (Week View)</span>
+                    <div class="flow-node action-green">ดึงประวัติสูงสุดรายวันย้อนหลัง 7 วัน<br>คำนวณและเตรียมข้อความแสดงผลแบบสัปดาห์</div>
+                </div>
+            </div>
+
+            <div class="flow-arrow">↓</div>
+            <div class="flow-node">เรนเดอร์โครงสร้างหน้าแดชบอร์ดหลัก (Dashboard Screen)</div>
+            <div class="flow-arrow">↓</div>
+            <div class="flow-node" style="background: #faf5ff; border-color: #a855f7;">แสดงวิดเจ็ตย่อย: TopBar, PowerCard, TrendChart, ActivityLogs</div>
+            <div class="flow-arrow">↓</div>
+            <div class="flow-node decision">ผู้ใช้งานทำรายการโต้ตอบผ่านหน้าจอหลัก</div>
+
+            <div class="flow-row">
+                <div class="flow-col">
+                    <span class="branch-label">กดปุ่มสลับธีม</span>
+                    <div class="flow-node" style="font-size: 0.85rem;">สลับสีธีมผ่าน AppColors.isDark และแสดงผลใหม่ทันที</div>
+                </div>
+                <div class="flow-col">
+                    <span class="branch-label">กดเลือกเมนู "ประวัติ"</span>
+                    <div class="flow-node" style="font-size: 0.85rem;">แสดง HistoryList ที่แปลงฟอร์แทต D/M/Y แล้ว เมื่อเลือกวันจะรีเซตหน้าหลักไปยังวันดังกล่าว</div>
+                </div>
+                <div class="flow-col">
+                    <span class="branch-label">มีข้อมูลอัปเดตเรียลไทม์</span>
+                    <div class="flow-node" style="font-size: 0.85rem;">StreamBuilder อัปเดตข้อมูลและลากเส้นแสดงผลกราฟทันที</div>
+                </div>
+            </div>
+        </div>
+
+        <hr>
+
+        <h3>3.6 โครงสร้างและการจัดวางหน้าจอหลัก (Main Screen Architecture)</h3>
         <p>โครงสร้างหน้าจอถูกควบคุมโดยคลาส <code>WattDashboardPage</code> (ในไฟล์ <code>graph_page.dart</code>) ซึ่งเป็น <code>StatefulWidget</code> ทำหน้าที่เป็นผู้ประสานงานหลักในการจัดโครงสร้างหน้าและการสลับมุมมองระหว่าง <strong>หน้าหลัก (Dashboard)</strong> และ <strong>หน้าประวัติ (History List)</strong> โดยใช้โครงร่างโครงสร้างแบบชั้น (Layered Layout) ร่วมกับ <code>Scaffold</code> ดังนี้:</p>
         <ul>
             <li><strong>ส่วนบน (TopBar)</strong>: แสดงโลโก้ ชื่อแอพพลิเคชัน (Energy Monitor) และปุ่มเปลี่ยนโหมดกลางคืน (Dark Mode Toggle)</li>
@@ -152,9 +605,9 @@
 
         <hr>
 
-        <h3>3.2 รายละเอียดการทำงานและการเชื่อมต่อส่วนเก็บข้อมูลหลัก (Core Integration)</h3>
+        <h3>3.7 รายละเอียดการทำงานและการเชื่อมต่อส่วนเก็บข้อมูลหลัก (Core Integration)</h3>
         
-        <h4>3.2.1 การเริ่มต้นระบบและการเชื่อมต่อ Firebase (Firebase Initialization)</h4>
+        <h4>3.7.1 การเริ่มต้นระบบและการเชื่อมต่อ Firebase (Firebase Initialization)</h4>
         <p>แอพพลิเคชันจะเริ่มต้นสถาปัตยกรรมผ่านฟังก์ชันหลัก <code>main()</code> ในไฟล์ <code>main.dart</code> โดยทำการเริ่มต้นการเชื่อมต่อแบบอะซิงโครนัส (Asynchronous) เข้ากับ Firebase เพื่อเตรียมความพร้อมสำหรับการทำ Data Streaming:</p>
         
         <pre><code>// โค้ดส่วนการเริ่มต้นระบบและการเชื่อมต่อกับ Firebase (main.dart)
@@ -166,7 +619,7 @@ void main() async {
   runApp(const MyApp());
 }</code></pre>
 
-        <h4>3.2.2 การดึงข้อมูลและเชื่อมโยงข้อมูลแบบเรียลไทม์ (Firebase Realtime Stream Integration)</h4>
+        <h4>3.7.2 การดึงข้อมูลและเชื่อมโยงข้อมูลแบบเรียลไทม์ (Firebase Realtime Stream Integration)</h4>
         <p>ระบบใช้โครงสร้าง <code>StreamBuilder</code> ในคลาส <code>_WattDashboardPageState</code> (ในไฟล์ <code>graph_page.dart</code>) เพื่อสมัครรับข้อมูล (Subscribe) จากตำแหน่ง <code>history</code> บน Firebase Realtime Database ทำให้หน้าจอแอพพลิเคชันสามารถรีเรนเดอร์ตัวเองใหม่โดยอัตโนมัติทันทีที่มีการเปลี่ยนแปลงข้อมูลจากฝั่งฮาร์ดแวร์:</p>
 
         <pre><code>// โค้ดส่วนดึงข้อมูลประวัติและค่าเรียลไทม์จาก Firebase Realtime Database (graph_page.dart)
@@ -202,12 +655,12 @@ class _WattDashboardPageState extends State&lt;WattDashboardPage&gt; {
 
         <hr>
 
-        <h3>3.3 รายละเอียดการออกแบบและโครงสร้างโค้ดของวิดเจ็ตย่อย (UI Component Breakdown)</h3>
+        <h3>3.8 รายละเอียดการออกแบบและโครงสร้างโค้ดของวิดเจ็ตย่อย (UI Component Breakdown)</h3>
 
-        <h4>3.3.1 TopBar (แถบเมนูด้านบน)</h4>
+        <h4>3.8.1 TopBar (แถบเมนูด้านบน)</h4>
         <p>ทำหน้าที่แสดงชื่อระบบและสลับสถานะสีธีมผ่านตัวแปร <code>onToggleTheme</code> ที่เชื่อมกับสถานะหน้าจอหลัก</p>
 
-        <h4>3.3.2 PowerCard (การ์ดแสดงผลค่ากำลังไฟฟ้าหลัก)</h4>
+        <h4>3.8.2 PowerCard (การ์ดแสดงผลค่ากำลังไฟฟ้าหลัก)</h4>
         <p>แสดงค่ากำลังไฟฟ้าหลัก (วัตต์ และ แอมป์) พร้อมระบบแปลงรูปแบบการแสดงผลวันที่ที่กำลังถูกดึงข้อมูลจากค่าเริ่มต้นของเซสชันหรือค่าที่ดึงมาจากฐานข้อมูล:</p>
 
         <pre><code>// โค้ดส่วนการรับข้อมูลและแปลงแสดงผลการ์ดหลัก (power_card.dart)
@@ -230,7 +683,7 @@ class PowerCard extends StatelessWidget {
       child: Column(
         children: [
           Text(
-            dayView ? formattedDate : 'Last 7 Days', // แสดงวันที่ในฟอร์แมต D/M/Y ที่แปลงแล้ว
+            dayView ? formattedDate : 'Last 7 Days', // แสดงวันที่ในฟอร์แทต D/M/Y ที่แปลงแล้ว
             style: TextStyle(fontSize: 11, color: AppColors.textMuted),
           ),
           // ... แสดงค่ากำลังไฟฟ้าและกระแสไฟฟ้า ...
@@ -240,10 +693,10 @@ class PowerCard extends StatelessWidget {
   }
 }</code></pre>
 
-        <h4>3.3.3 TrendChart (กราฟแนวโน้มแสดงผลการใช้พลังงาน)</h4>
+        <h4>3.8.3 TrendChart (กราฟแนวโน้มแสดงผลการใช้พลังงาน)</h4>
         <p>ใช้โมดูลกราฟของ <code>fl_chart</code> ในการแสดงแนวโน้มแบบเส้นเชื่อมความหนา 3.5 และใช้โครงร่างความโปร่งใสแบบไล่โทนสี (Gradient) แสดงผลข้อมูลได้ทั้งแบบ Day (ข้อมูลชั่วโมงต่อชั่วโมง) และ Week (ข้อมูลแบบ 7 วันล่าสุด)</p>
 
-        <h4>3.3.4 ActivityLogs (ส่วนแสดงประวัติกิจกรรมเชิงลึก)</h4>
+        <h4>3.8.4 ActivityLogs (ส่วนแสดงประวัติกิจกรรมเชิงลึก)</h4>
         <p>มีลอจิกแปลงรูปแบบช่วงวันที่ในการแสดงบันทึกแบบแถวรายการย้อนหลังหากมองผ่านมุมมองรายสัปดาห์:</p>
 
         <pre><code>// โค้ดส่วนแยกการจัดแสดงผลวันที่กิจกรรมรายวัน (activity_logs.dart)
@@ -258,7 +711,7 @@ if (dayView) {
   }
 }</code></pre>
 
-        <h4>3.3.5 HistoryList (ส่วนรายการประวัติการตรวจสอบย้อนหลัง)</h4>
+        <h4>3.8.5 HistoryList (ส่วนรายการประวัติการตรวจสอบย้อนหลัง)</h4>
         <p>แสดงรายการคีย์ประวัติวันที่ที่นำมาเรียงเป็นปุ่มกด โดยลอจิกการแปลงรูปแบบจะแปลงก่อนส่งเข้าวาดข้อความเพื่อความสะดวกของมนุษย์ และส่งคีย์ดั้งเดิมกลับไปประมวลผลผ่าน <code>onDateSelected</code>:</p>
 
         <pre><code>// โค้ดส่วนแสดงผลรายการประวัติย้อนหลัง (history_list.dart)
