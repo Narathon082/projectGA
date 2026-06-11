@@ -27,6 +27,23 @@ class _WattDashboardPageState extends State<WattDashboardPage> {
   int  _navIndex = 0;     
   String? _selectedDate;
 
+  Map<String, dynamic> _convertToMap(dynamic val) {
+    if (val == null) return {};
+    if (val is Map) {
+      return val.map((k, v) => MapEntry(k.toString(), v));
+    }
+    if (val is List) {
+      final Map<String, dynamic> map = {};
+      for (int i = 0; i < val.length; i++) {
+        if (val[i] != null) {
+          map[i.toString()] = val[i];
+        }
+      }
+      return map;
+    }
+    return {};
+  }
+
   @override
   Widget build(BuildContext context) {
     AppColors.isDark = _isDark;
@@ -46,9 +63,9 @@ class _WattDashboardPageState extends State<WattDashboardPage> {
             String displayDate = DateFormat('yyyy-MM-dd').format(DateTime.now());
 
             if (snapshot.hasData && snapshot.data!.snapshot.value != null) {
-              final raw = snapshot.data!.snapshot.value as Map;
+              final raw = _convertToMap(snapshot.data!.snapshot.value);
               
-              availableDates = raw.keys.map((e) => e.toString()).toList();
+              availableDates = raw.keys.toList();
               availableDates.sort((a, b) => b.compareTo(a));
 
               if (_selectedDate != null && availableDates.contains(_selectedDate)) {
@@ -58,9 +75,9 @@ class _WattDashboardPageState extends State<WattDashboardPage> {
               }
 
               if (_dayView) {
-                final dayRaw = raw[displayDate] as Map? ?? {};
+                final dayRaw = _convertToMap(raw[displayDate]);
                 dayRaw.forEach((key, value) {
-                  final hour = int.tryParse(key.toString()) ?? 0;
+                  final hour = int.tryParse(key) ?? 0;
                   double w = 0, a = 0;
                   if (value is Map) {
                     w = double.tryParse(value['watt'].toString()) ?? 0;
@@ -84,7 +101,7 @@ class _WattDashboardPageState extends State<WattDashboardPage> {
               } else {
                 final last7 = availableDates.take(7).toList().reversed.toList();
                 for (int i = 0; i < last7.length; i++) {
-                  final dRaw = raw[last7[i]] as Map? ?? {};
+                  final dRaw = _convertToMap(raw[last7[i]]);
                   weekLabels.add(last7[i]); // YYYY-MM-DD
                   
                   double maxW = 0, maxA = 0;
@@ -94,7 +111,13 @@ class _WattDashboardPageState extends State<WattDashboardPage> {
                       w = double.tryParse(v['watt'].toString()) ?? 0;
                       a = double.tryParse(v['amp'].toString()) ?? 0;
                     } else {
-                      w = double.tryParse(v.toString()) ?? 0;
+                      double? parsedVal = double.tryParse(v.toString());
+                      if (parsedVal != null) {
+                        w = parsedVal;
+                      } else if (v is Map) {
+                        w = double.tryParse(v['watt'].toString()) ?? 0;
+                        a = double.tryParse(v['amp'].toString()) ?? 0;
+                      }
                     }
                     if (w > maxW) maxW = w;
                     if (a > maxA) maxA = a;

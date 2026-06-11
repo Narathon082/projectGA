@@ -132,6 +132,8 @@ class TrendChart extends StatelessWidget {
     return LineChartData(
       maxY: maxY,
       minY: 0,
+      minX: 0,
+      maxX: dayView ? 23 : 6,
       gridData: FlGridData(
         show: true,
         drawVerticalLine: false,
@@ -172,24 +174,35 @@ class TrendChart extends StatelessWidget {
             reservedSize: 22,
             getTitlesWidget: (v, m) {
               if (dayView) {
+                final hour = v.toInt();
+                // แสดงเฉพาะทุกๆ 4 ชั่วโมง เพื่อไม่ให้ตัวอักษรซ้อนกัน (เช่น 00:00, 04:00, 08:00, 12:00, 16:00, 20:00)
+                if (hour % 4 != 0) {
+                  return const SizedBox.shrink();
+                }
                 return Padding(
                   padding: const EdgeInsets.only(top: 6),
                   child: Text(
-                    '${v.toInt()}:00',
-                    style: TextStyle(fontSize: 10, color: AppColors.textMuted, fontWeight: FontWeight.w600),
+                    '${hour.toString().padLeft(2, '0')}:00',
+                    style: TextStyle(fontSize: 9, color: AppColors.textMuted, fontWeight: FontWeight.w600),
                   ),
                 );
               } else {
                 final idx = v.toInt();
                 String label = idx >= 0 && idx < weekLabels.length ? weekLabels[idx] : '';
                 if (label.length == 10) {
-                  label = label.substring(5);
+                  // แปลงวันที่รูปแบบ YYYY-MM-DD -> DD/MM (เช่น 2026-06-11 -> 11/06) เพื่อให้สั้นกระชับ
+                  final parts = label.split('-');
+                  if (parts.length == 3) {
+                    label = '${parts[2]}/${parts[1]}';
+                  } else {
+                    label = label.substring(5);
+                  }
                 }
                 return Padding(
                   padding: const EdgeInsets.only(top: 6),
                   child: Text(
                     label,
-                    style: TextStyle(fontSize: 10, color: AppColors.textMuted, fontWeight: FontWeight.w600),
+                    style: TextStyle(fontSize: 9, color: AppColors.textMuted, fontWeight: FontWeight.w600),
                   ),
                 );
               }
@@ -241,9 +254,9 @@ class TrendChart extends StatelessWidget {
             checkToShowDot: (spot, barData) => true,
             getDotPainter: (spot, percent, barData, index) {
               return FlDotCirclePainter(
-                radius: 4.5,
+                radius: 2.5,
                 color: AppColors.surface,
-                strokeWidth: 2.5,
+                strokeWidth: 1.5,
                 strokeColor: AppColors.primary,
               );
             },

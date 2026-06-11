@@ -9,12 +9,12 @@ const int OUT_CURR_PIN = 26;
 const int POP_SIZE = 5;
 const int GENE_LENGTH = 10; // 10-bit สำหรับ 0-1023
 
-// --- Wi-Fi & Firebase Configuration ---
+// --- Wi-Fi & Firebase Configuration (ที่เพิ่มเข้ามา) ---
 const char* WIFI_SSID = "YOUR_WIFI_SSID";          // ใส่ชื่อ Wi-Fi ของคุณ
 const char* WIFI_PASSWORD = "YOUR_WIFI_PASSWORD";  // ใส่รหัสผ่าน Wi-Fi ของคุณ
 const char* FIREBASE_HOST = "https://projectga-d3f20-default-rtdb.asia-southeast1.firebasedatabase.app";
 
-// --- NTP Time Server ---
+// --- NTP Time Server (ที่เพิ่มเข้ามา) ---
 const char* ntpServer = "pool.ntp.org";
 const long  gmtOffset_sec = 7 * 3600; // GMT+7 สำหรับประเทศไทย
 const int   daylightOffset_sec = 0;   // ไม่มี Daylight Saving ในไทย
@@ -28,34 +28,15 @@ const float sensitivity = 0.0622;
 const float vBat = 12.6;
 
 // --- System Control ---
-volatile bool isRunning = false;      // สถานะการทำงาน (ใช้ volatile เพื่อความปลอดภัยในการข้าม Thread)
+bool isRunning = false;      // Status การทำงาน
 unsigned long stepCount = 0; // ตัวแปรนับจำนวนครั้งที่แสดงผล (1 รุ่น = 1 Step)
 
-// --- Global Variables for Measurement (for Firebase) ---
-volatile float currentPowerVal = 0.0;
-volatile float currentAmpVal = 0.0;
-
-// --- Function Declarations ---
-int binaryToDecimal(int genes[]);
-float getPower();
-void firebaseUploadTask(void * parameter);
-
-void setup() {
-  Serial.begin(115200);
-  ledcAttach(PWM_PIN, 20000, 10);
-  ledcWrite(PWM_PIN, 0); // ปิด MOSFET ไว้ก่อนเพื่อความปลอดภัย
-
-  // 1. Calibration
-  Serial.println("Calibrating... Please do not connect panel/load yet.");
-  float sOut = 0;
-  for(int i=0; i<200; i++) { sOut += analogRead(OUT_CURR_PIN); delay(2); }
-  offsetOut = (sOut/200.0)*(3.3/4095.0);
-
-  // เชื่อมต่อ Wi-Fi
+// --- ฟังก์ชันที่เพิ่มเข้ามาสำหรับจัดการ Wi-Fi, NTP และ Firebase ---
+void connectWiFiAndNTP() {
   WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
   Serial.print("Connecting to Wi-Fi");
   int wifiTimeout = 0;
-  while (WiFi.status() != WL_CONNECTED && wifiTimeout < 20) { // รอ 10 วินาที
+  while (WiFi.status() != WL_CONNECTED && wifiTimeout < 20) { // รอสูงสุด 10 วินาที
     delay(500);
     Serial.print(".");
     wifiTimeout++;
@@ -72,17 +53,51 @@ void setup() {
   } else {
     Serial.println("\n[Wi-Fi] Connection failed. Operating in offline mode.");
   }
+}
 
-  // สร้าง Task สำหรับส่งข้อมูล Firebase บน Core 0 (เพื่อไม่ให้รบกวนการคำนวณและหน่วงเวลาของ GA MPPT บน Core 1)
-  xTaskCreatePinnedToCore(
-    firebaseUploadTask,    // ฟังก์ชันของ Task
-    "FirebaseTask",        // ชื่อ Task
-    8192,                  // Stack size (bytes)
-    NULL,                  // Parameter ส่งเข้า Task
-    1,                     // Priority
-    NULL,                  // Task handle
-    0                      // Run on Core 0
-  );
+void sendDataToFirebase(float power, float current) {
+  if (WiFi.status() == WL_CONNECTED) {
+    struct tm timeinfo;
+    if (getLocalTime(&timeinfo)) {
+      char dateStr[12];
+      strftime(dateStr, sizeof(dateStr), "%Y-%m-%d", &timeinfo);
+      int currentHour = timeinfo.tm_hour;
+
+      HTTPClient http;
+      // สร้าง URL: /history/<date>/<hour>.json
+      String url = String(FIREBASE_HOST) + "/history/" + String(dateStr) + "/" + String(currentHour) + ".json";
+      
+      http.begin(url);
+      http.addHeader("Content-Type", "application/json");
+
+      // สร้าง JSON Body สำหรับส่ง
+      String jsonPayload = "{\"watt\":" + String(power, 2) + ",\"amp\":" + String(current, 2) + "}";
+
+      // ส่งข้อมูลแบบ PATCH (จะปรับปรุงข้อมูล watt และ amp ที่ชั่วโมงนั้นๆ เสมอ)
+      int httpResponseCode = http.PATCH(jsonPayload);
+      
+      if (httpResponseCode > 0) {
+        Serial.printf("[Firebase] Send Success (HTTP %d): %s\n", httpResponseCode, jsonPayload.c_str());
+      } else {
+        Serial.printf("[Firebase] Send Failed: %s\n", http.errorToString(httpResponseCode).c_str());
+      }
+      http.end();
+    } else {
+      Serial.println("[Firebase] NTP Time Error: Failed to obtain local time");
+    }
+  }
+}
+
+void setup() {
+  Serial.begin(115200);
+  ledcAttach(PWM_PIN, 20000, 10);
+  ledcWrite(PWM_PIN, 0); // ปิด MOSFET ไว้ก่อนเพื่อความปลอดภัย
+
+  // 1. Calibration
+  Serial.println("Calibrating... Please do not connect panel/load yet.");
+  float sOut = 0;
+  for(int i=0; i<200; i++) { sOut += analogRead(OUT_CURR_PIN); delay(2); }
+  offsetOut = (sOut/200.0)*(3.3/4095.0);
 
   Serial.println("=========================================");
   Serial.println("     GA-MPPT Algorithm (Binary Gene)     ");
@@ -90,6 +105,9 @@ void setup() {
   Serial.println(" พิมพ์ '1' : สั่งเริ่มรัน GA (เริ่มนับ Step 1 ใหม่)");
   Serial.println(" พิมพ์ '0' : สั่งหยุดฉุกเฉิน (Duty = 0)");
   Serial.println("-----------------------------------------");
+
+  // เชื่อมต่อ Wi-Fi และดึงเวลา (เพิ่มเข้ามา)
+  connectWiFiAndNTP();
 }
 
 // แปลง Binary Array เป็นตัวเลข Decimal (0-1023)
@@ -108,10 +126,7 @@ float getPower() {
   for(int i=0; i<40; i++) { iRaw += analogRead(OUT_CURR_PIN); delayMicroseconds(100); }
   float voltage = (iRaw/40.0)*(3.3/4095.0);
   float current = (voltage - offsetOut) / sensitivity;
-  
-  // อัปเดตกระแสล่าสุดเก็บในตัวแปร global
-  currentAmpVal = abs(current);
-  return vBat * currentAmpVal;
+  return vBat * abs(current);
 }
 
 void loop() {
@@ -145,7 +160,6 @@ void loop() {
   if (isRunning) {
     int bestIdx = 0;
     float maxFit = -1;
-    float bestAmpOfGen = 0.0;
 
     // Evaluation (ประเมินความเหมาะสมของประชากรทั้ง 5 ตัว)
     for(int i=0; i<POP_SIZE; i++) {
@@ -153,25 +167,26 @@ void loop() {
       ledcWrite(PWM_PIN, duty);
       delay(100); // หน่วงเวลาให้ระบบเสถียรก่อนอ่านค่า (Step time 100ms)
       
-      float p = getPower();
-      fitness[i] = p;
+      fitness[i] = getPower();
       
       // หาตัวที่ดีที่สุด
       if(fitness[i] > maxFit) {
         maxFit = fitness[i];
         bestIdx = i;
-        bestAmpOfGen = currentAmpVal; // บันทึกกระแสของตัวที่ดีที่สุดของรุ่น
       }
     }
-
-    // อัปเดตผลลัพธ์ที่ดีที่สุดลงตัวแปร Global เพื่อให้ Task อัปโหลดขึ้น Firebase ไปทำงาน
-    currentPowerVal = maxFit;
-    currentAmpVal = bestAmpOfGen;
 
     // --- แสดงผลเฉพาะตัวที่ดีที่สุดของรุ่น (1 รุ่น = 1 Step) ---
     stepCount++; 
     Serial.print(stepCount); Serial.print(",");
     Serial.println(maxFit, 2); 
+
+    // ส่งข้อมูลไปยัง Firebase (เพิ่มเข้ามา - ตั้งเวลาให้ส่งทุกๆ 15 วินาที เพื่อไม่ให้กระทบประสิทธิภาพ loop)
+    static unsigned long lastUploadTime = 0;
+    if (millis() - lastUploadTime >= 15000) {
+      lastUploadTime = millis();
+      sendDataToFirebase(maxFit, maxFit / vBat);
+    }
 
     // Reproduction (Crossover & Mutation)
     int nextGen[POP_SIZE][GENE_LENGTH];
@@ -198,48 +213,5 @@ void loop() {
 
     // อัปเดตประชากรทั้งหมดเพื่อเตรียมรันในรุ่นต่อไป
     memcpy(population, nextGen, sizeof(population));
-  }
-}
-
-// --- Task สำหรับอัปโหลดข้อมูลไปยัง Firebase (ทำงานแยกบน Core 0 แบบ Non-blocking) ---
-void firebaseUploadTask(void * parameter) {
-  for (;;) {
-    // อัปโหลดข้อมูลทุกๆ 15 วินาที
-    vTaskDelay(pdMS_TO_TICKS(15000));
-    
-    if (isRunning && WiFi.status() == WL_CONNECTED) {
-      struct tm timeinfo;
-      if (getLocalTime(&timeinfo)) {
-        char dateStr[12];
-        strftime(dateStr, sizeof(dateStr), "%Y-%m-%d", &timeinfo);
-        int currentHour = timeinfo.tm_hour;
-
-        HTTPClient http;
-        // สร้าง URL: /history/<date>/<hour>.json
-        String url = String(FIREBASE_HOST) + "/history/" + String(dateStr) + "/" + String(currentHour) + ".json";
-        
-        http.begin(url);
-        http.addHeader("Content-Type", "application/json");
-
-        // ดึงค่าล่าสุดจากตัวแปร Global (ซึ่งเป็นค่าที่ดีที่สุดของรุ่นล่าสุด)
-        float w = currentPowerVal;
-        float a = currentAmpVal;
-        
-        // สร้าง JSON Body สำหรับส่ง
-        String jsonPayload = "{\"watt\":" + String(w, 2) + ",\"amp\":" + String(a, 2) + "}";
-
-        // ส่งข้อมูลแบบ PATCH
-        int httpResponseCode = http.PATCH(jsonPayload);
-        
-        if (httpResponseCode > 0) {
-          Serial.printf("[Firebase] Send Success (HTTP %d): %s\n", httpResponseCode, jsonPayload.c_str());
-        } else {
-          Serial.printf("[Firebase] Send Failed: %s\n", http.errorToString(httpResponseCode).c_str());
-        }
-        http.end();
-      } else {
-        Serial.println("[Firebase] NTP Time Error: Failed to obtain local time");
-      }
-    }
   }
 }
