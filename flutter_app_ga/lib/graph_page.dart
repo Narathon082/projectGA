@@ -27,8 +27,6 @@ class _WattDashboardPageState extends State<WattDashboardPage> {
   
   // Real-time Database references and local state
   StreamSubscription? _realtimeSub;
-  Timer? _simulationTimer;
-  bool _isUsingFirebaseRealtime = false;
 
   double vin = 0.0;
   double iin = 0.0;
@@ -74,7 +72,6 @@ class _WattDashboardPageState extends State<WattDashboardPage> {
   @override
   void dispose() {
     _realtimeSub?.cancel();
-    _simulationTimer?.cancel();
     super.dispose();
   }
 
@@ -93,12 +90,11 @@ class _WattDashboardPageState extends State<WattDashboardPage> {
   }
 
   void _setupRealtimeData() {
-    // 1. Subscribe to Firebase Realtime Database at 'realtime' node
+    // Subscribe to Firebase Realtime Database at 'realtime' node
     final DatabaseReference realtimeRef = FirebaseDatabase.instance.ref('realtime');
     _realtimeSub = realtimeRef.onValue.listen((event) {
       final data = event.snapshot.value;
       if (data != null && data is Map) {
-        _isUsingFirebaseRealtime = true;
         setState(() {
           vin = double.tryParse(data['vin'].toString()) ?? 0.0;
           iin = double.tryParse(data['iin'].toString()) ?? 0.0;
@@ -109,37 +105,6 @@ class _WattDashboardPageState extends State<WattDashboardPage> {
           _addRealtimePoint(pout);
         });
       }
-    });
-
-    // 2. Start simulation timer as fallback if Firebase realtime node is empty/offline
-    _simulationTimer = Timer.periodic(const Duration(seconds: 2), (timer) {
-      if (_isUsingFirebaseRealtime) return;
-
-      setState(() {
-        // Fallback to the latest historical watt if available, else 8.5W
-        double basePout = _latestHistoryWatt ?? 8.5;
-        if (basePout <= 0.1) basePout = 8.5;
-
-        final double randomSec = DateTime.now().second.toDouble();
-        final double wave = 0.5 * (1 + (randomSec / 60.0)); // subtle wave modifier
-
-        final double randV = (DateTime.now().millisecond % 80 - 40) / 100.0; // -0.4V to +0.4V
-        final double randI = (DateTime.now().millisecond % 60 - 30) / 1000.0; // -0.03A to +0.03A
-
-        // Output parameters (Battery charging side)
-        vout = 12.4 + randV;
-        iout = (basePout / vout) * wave + randI;
-        if (iout < 0) iout = 0;
-        pout = vout * iout;
-
-        // Input parameters (Solar panel side) - higher voltage and input watt (considering efficiency)
-        vin = 18.2 + randV * 1.5;
-        double efficiency = 0.88 + (DateTime.now().millisecond % 5) / 100.0; // 88% - 92% efficiency
-        pin = pout / efficiency;
-        iin = pin / vin;
-
-        _addRealtimePoint(pout);
-      });
     });
   }
 
