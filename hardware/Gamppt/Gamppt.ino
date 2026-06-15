@@ -31,6 +31,13 @@ const float vBat = 12.6;
 bool isRunning = false;      // Status การทำงาน
 unsigned long stepCount = 0; // ตัวแปรนับจำนวนครั้งที่แสดงผล (1 รุ่น = 1 Step)
 
+// --- Global variables for 1-hour averaging ---
+float accumulatedPower = 0.0;
+float accumulatedCurrent = 0.0;
+unsigned int sampleCount = 0;
+int targetHour = -1;
+String targetDate = "";
+
 // --- ฟังก์ชันที่เพิ่มเข้ามาสำหรับจัดการ Wi-Fi, NTP และ Firebase ---
 void connectWiFiAndNTP() {
   WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
@@ -55,36 +62,27 @@ void connectWiFiAndNTP() {
   }
 }
 
-void sendDataToFirebase(float power, float current) {
+void sendDataToFirebase(float power, float current, String dateStr, int hour) {
   if (WiFi.status() == WL_CONNECTED) {
-    struct tm timeinfo;
-    if (getLocalTime(&timeinfo)) {
-      char dateStr[12];
-      strftime(dateStr, sizeof(dateStr), "%Y-%m-%d", &timeinfo);
-      int currentHour = timeinfo.tm_hour;
+    HTTPClient http;
+    // สร้าง URL: /history/<date>/<hour>.json
+    String url = String(FIREBASE_HOST) + "/history/" + dateStr + "/" + String(hour) + ".json";
+    
+    http.begin(url);
+    http.addHeader("Content-Type", "application/json");
 
-      HTTPClient http;
-      // สร้าง URL: /history/<date>/<hour>.json
-      String url = String(FIREBASE_HOST) + "/history/" + String(dateStr) + "/" + String(currentHour) + ".json";
-      
-      http.begin(url);
-      http.addHeader("Content-Type", "application/json");
+    // สร้าง JSON Body สำหรับส่ง
+    String jsonPayload = "{\"watt\":" + String(power, 2) + ",\"amp\":" + String(current, 2) + "}";
 
-      // สร้าง JSON Body สำหรับส่ง
-      String jsonPayload = "{\"watt\":" + String(power, 2) + ",\"amp\":" + String(current, 2) + "}";
-
-      // ส่งข้อมูลแบบ PATCH (จะปรับปรุงข้อมูล watt และ amp ที่ชั่วโมงนั้นๆ เสมอ)
-      int httpResponseCode = http.PATCH(jsonPayload);
-      
-      if (httpResponseCode > 0) {
-        Serial.printf("[Firebase] Send Success (HTTP %d): %s\n", httpResponseCode, jsonPayload.c_str());
-      } else {
-        Serial.printf("[Firebase] Send Failed: %s\n", http.errorToString(httpResponseCode).c_str());
-      }
-      http.end();
+    // ส่งข้อมูลแบบ PATCH (จะปรับปรุงข้อมูล watt และ amp ที่ชั่วโมงนั้นๆ เสมอ)
+    int httpResponseCode = http.PATCH(jsonPayload);
+    
+    if (httpResponseCode > 0) {
+      Serial.printf("[Firebase] Send Success (HTTP %d): %s\n", httpResponseCode, jsonPayload.c_str());
     } else {
-      Serial.println("[Firebase] NTP Time Error: Failed to obtain local time");
+      Serial.printf("[Firebase] Send Failed: %s\n", http.errorToString(httpResponseCode).c_str());
     }
+    http.end();
   }
 }
 
@@ -181,11 +179,48 @@ void loop() {
     Serial.print(stepCount); Serial.print(",");
     Serial.println(maxFit, 2); 
 
-    // ส่งข้อมูลไปยัง Firebase (เพิ่มเข้ามา - ตั้งเวลาให้ส่งทุกๆ 15 วินาที เพื่อไม่ให้กระทบประสิทธิภาพ loop)
-    static unsigned long lastUploadTime = 0;
-    if (millis() - lastUploadTime >= 15000) {
-      lastUploadTime = millis();
-      sendDataToFirebase(maxFit, maxFit / vBat);
+    // --- ส่วนเก็บตัวอย่างทุก 15 วินาทีและหาค่าเฉลี่ยสะสมรายชั่วโมง (Running Average) ---
+    static unsigned long lastSampleTime = 0;
+    if (millis() - lastSampleTime >= 15000) {
+      lastSampleTime = millis();
+      
+      float currentPower = maxFit;
+      float currentAmp = maxFit / vBat;
+      
+      struct tm timeinfo;
+      if (getLocalTime(&timeinfo)) {
+        char dateStr[12];
+        strftime(dateStr, sizeof(dateStr), "%Y-%m-%d", &timeinfo);
+        int currentHour = timeinfo.tm_hour;
+        
+        // กำหนดชั่วโมงและวันที่เริ่มต้นตอนเริ่มระบบ
+        if (targetHour == -1) {
+          targetHour = currentHour;
+          targetDate = String(dateStr);
+        }
+        
+        // ตรวจสอบเมื่อสลับชั่วโมงใหม่ (เช่น จาก 12 ไป 13)
+        if (currentHour != targetHour) {
+          // เริ่มต้นรอบชั่วโมงใหม่ด้วยตัวอย่างแรกของชั่วโมงใหม่
+          accumulatedPower = currentPower;
+          accumulatedCurrent = currentAmp;
+          sampleCount = 1;
+          targetHour = currentHour;
+          targetDate = String(dateStr);
+        } else {
+          // อยู่ในชั่วโมงเดิม สะสมค่าไปเรื่อยๆ
+          accumulatedPower += currentPower;
+          accumulatedCurrent += currentAmp;
+          sampleCount++;
+        }
+        
+        // คำนวณค่าเฉลี่ยสะสมจนถึงวินาทีปัจจุบัน
+        float avgPower = accumulatedPower / sampleCount;
+        float avgCurrent = accumulatedCurrent / sampleCount;
+        
+        // ส่งค่าเฉลี่ยสะสมอัปเดตเรียลไทม์ขึ้น Firebase (อัปเดตทุก 15 วินาที)
+        sendDataToFirebase(avgPower, avgCurrent, targetDate, targetHour);
+      }
     }
 
     // Reproduction (Crossover & Mutation)
