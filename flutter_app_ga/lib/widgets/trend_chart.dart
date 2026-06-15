@@ -2,18 +2,22 @@ import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import '../constants/app_colors.dart';
 
+enum ChartMode { realtime, daily, weekly }
+
 class TrendChart extends StatelessWidget {
   final List<FlSpot> spots;
   final List<String> weekLabels;
-  final bool dayView;
-  final ValueChanged<bool> onToggleView;
+  final List<String> realtimeLabels;
+  final ChartMode chartMode;
+  final ValueChanged<ChartMode> onModeChanged;
 
   const TrendChart({
     Key? key,
     required this.spots,
     required this.weekLabels,
-    required this.dayView,
-    required this.onToggleView,
+    required this.realtimeLabels,
+    required this.chartMode,
+    required this.onModeChanged,
   }) : super(key: key);
 
   @override
@@ -24,14 +28,16 @@ class TrendChart extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Text(
-              'Consumption Trend',
+              chartMode == ChartMode.realtime
+                  ? 'Real-time Trend'
+                  : 'Consumption Trend',
               style: TextStyle(
                 fontSize: 13,
                 fontWeight: FontWeight.w700,
                 color: AppColors.textDark,
               ),
             ),
-            _buildDayWeekTabs(),
+            _buildModeTabs(),
           ],
         ),
         const SizedBox(height: 10),
@@ -40,7 +46,7 @@ class TrendChart extends StatelessWidget {
     );
   }
 
-  Widget _buildDayWeekTabs() {
+  Widget _buildModeTabs() {
     return Container(
       padding: const EdgeInsets.all(2),
       decoration: BoxDecoration(
@@ -51,20 +57,21 @@ class TrendChart extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          _tab('Day', true),
-          _tab('Week', false),
+          _tab('Realtime', ChartMode.realtime),
+          _tab('Day', ChartMode.daily),
+          _tab('Week', ChartMode.weekly),
         ],
       ),
     );
   }
 
-  Widget _tab(String label, bool isDay) {
-    final active = dayView == isDay;
+  Widget _tab(String label, ChartMode mode) {
+    final active = chartMode == mode;
     return GestureDetector(
-      onTap: () => onToggleView(isDay),
+      onTap: () => onModeChanged(mode),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 5),
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
         decoration: BoxDecoration(
           color: active ? AppColors.primary : Colors.transparent,
           borderRadius: BorderRadius.circular(16),
@@ -72,7 +79,7 @@ class TrendChart extends StatelessWidget {
         child: Text(
           label,
           style: TextStyle(
-            fontSize: 11,
+            fontSize: 10,
             fontWeight: FontWeight.w600,
             color: active ? Colors.white : AppColors.textMuted,
           ),
@@ -114,7 +121,7 @@ class TrendChart extends StatelessWidget {
     for (var spot in spots) {
       if (spot.y > maxWatt) maxWatt = spot.y;
     }
-    final maxY = maxWatt == 0 ? 100.0 : maxWatt * 1.25;
+    final maxY = maxWatt == 0 ? 10.0 : maxWatt * 1.25;
 
     double yInterval = maxY / 4;
     if (yInterval <= 0) {
@@ -129,11 +136,17 @@ class TrendChart extends StatelessWidget {
       yInterval = (yInterval / 100).ceil() * 100.0;
     }
 
+    final double maxXValue = chartMode == ChartMode.realtime
+        ? (spots.length > 1 ? (spots.length - 1).toDouble() : 9.0)
+        : chartMode == ChartMode.daily
+            ? 23
+            : 6;
+
     return LineChartData(
       maxY: maxY,
       minY: 0,
       minX: 0,
-      maxX: dayView ? 23 : 6,
+      maxX: maxXValue,
       gridData: FlGridData(
         show: true,
         drawVerticalLine: false,
@@ -159,8 +172,8 @@ class TrendChart extends StatelessWidget {
               return Padding(
                 padding: const EdgeInsets.only(right: 8),
                 child: Text(
-                  value.toInt().toString(),
-                  style: TextStyle(fontSize: 10, color: AppColors.textMuted, fontWeight: FontWeight.w500),
+                  value.toStringAsFixed(1),
+                  style: TextStyle(fontSize: 9, color: AppColors.textMuted, fontWeight: FontWeight.w500),
                   textAlign: TextAlign.right,
                 ),
               );
@@ -173,9 +186,24 @@ class TrendChart extends StatelessWidget {
             interval: 1, 
             reservedSize: 22,
             getTitlesWidget: (v, m) {
-              if (dayView) {
+              if (chartMode == ChartMode.realtime) {
+                final idx = v.toInt();
+                if (idx >= 0 && idx < realtimeLabels.length) {
+                  // Show label every 4th element to prevent crowded text
+                  if (idx % 4 != 0) {
+                    return const SizedBox.shrink();
+                  }
+                  return Padding(
+                    padding: const EdgeInsets.only(top: 6),
+                    child: Text(
+                      realtimeLabels[idx],
+                      style: TextStyle(fontSize: 8, color: AppColors.textMuted, fontWeight: FontWeight.w600),
+                    ),
+                  );
+                }
+                return const SizedBox.shrink();
+              } else if (chartMode == ChartMode.daily) {
                 final hour = v.toInt();
-                // แสดงเฉพาะทุกๆ 4 ชั่วโมง เพื่อไม่ให้ตัวอักษรซ้อนกัน (เช่น 00:00, 04:00, 08:00, 12:00, 16:00, 20:00)
                 if (hour % 4 != 0) {
                   return const SizedBox.shrink();
                 }
@@ -190,7 +218,6 @@ class TrendChart extends StatelessWidget {
                 final idx = v.toInt();
                 String label = idx >= 0 && idx < weekLabels.length ? weekLabels[idx] : '';
                 if (label.length == 10) {
-                  // แปลงวันที่รูปแบบ YYYY-MM-DD -> DD/MM (เช่น 2026-06-11 -> 11/06) เพื่อให้สั้นกระชับ
                   final parts = label.split('-');
                   if (parts.length == 3) {
                     label = '${parts[2]}/${parts[1]}';
@@ -218,13 +245,17 @@ class TrendChart extends StatelessWidget {
           getTooltipItems: (touchedSpots) {
             return touchedSpots.map((spot) {
               return LineTooltipItem(
-                '${spot.y.toStringAsFixed(1)} W\n',
-                TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13),
+                '${spot.y.toStringAsFixed(2)} W\n',
+                const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13),
                 children: [
                   TextSpan(
-                    text: dayView 
-                      ? '${spot.x.toInt()}:00' 
-                      : (spot.x.toInt() >= 0 && spot.x.toInt() < weekLabels.length ? (weekLabels[spot.x.toInt()].length == 10 ? weekLabels[spot.x.toInt()].substring(5) : weekLabels[spot.x.toInt()]) : ''),
+                    text: chartMode == ChartMode.realtime
+                        ? (spot.x.toInt() >= 0 && spot.x.toInt() < realtimeLabels.length ? realtimeLabels[spot.x.toInt()] : '')
+                        : chartMode == ChartMode.daily
+                            ? '${spot.x.toInt()}:00'
+                            : (spot.x.toInt() >= 0 && spot.x.toInt() < weekLabels.length
+                                ? (weekLabels[spot.x.toInt()].length == 10 ? weekLabels[spot.x.toInt()].substring(5) : weekLabels[spot.x.toInt()])
+                                : ''),
                     style: TextStyle(
                       color: Colors.white.withOpacity(0.7),
                       fontSize: 11,
@@ -240,17 +271,17 @@ class TrendChart extends StatelessWidget {
       lineBarsData: [
         LineChartBarData(
           spots: spots,
-          isCurved: true,
+          isCurved: chartMode != ChartMode.realtime, // straight lines look better for realtime ticks
           curveSmoothness: 0.35,
-          gradient: LinearGradient(
-            colors: [Color(0xFF8C88FF), AppColors.primary],
+          gradient: const LinearGradient(
+            colors: [Color(0xFF8C88FF), Color(0xFF4040C0)],
             begin: Alignment.centerLeft,
             end: Alignment.centerRight,
           ),
-          barWidth: 3.5,
+          barWidth: 3.0,
           isStrokeCapRound: true,
           dotData: FlDotData(
-            show: true,
+            show: chartMode != ChartMode.realtime, // hide dots for real-time scrolling graph
             checkToShowDot: (spot, barData) => true,
             getDotPainter: (spot, percent, barData, index) {
               return FlDotCirclePainter(
@@ -267,7 +298,7 @@ class TrendChart extends StatelessWidget {
               begin: Alignment.topCenter,
               end: Alignment.bottomCenter,
               colors: [
-                AppColors.primary.withOpacity(0.35),
+                AppColors.primary.withOpacity(0.25),
                 AppColors.primary.withOpacity(0.0),
               ],
             ),

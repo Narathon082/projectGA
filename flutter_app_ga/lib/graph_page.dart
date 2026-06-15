@@ -2,15 +2,18 @@ import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:intl/intl.dart';
+import 'dart:async';
 
 import 'models/energy_data.dart';
 import 'constants/app_colors.dart';
 import 'widgets/top_bar.dart';
 import 'widgets/power_card.dart';
+import 'widgets/in_out_card.dart';
 import 'widgets/trend_chart.dart';
 import 'widgets/activity_logs.dart';
 import 'widgets/history_list.dart';
 import 'widgets/bottom_nav.dart';
+import 'in_out_page.dart';
 
 class WattDashboardPage extends StatefulWidget {
   const WattDashboardPage({Key? key}) : super(key: key);
@@ -21,9 +24,27 @@ class WattDashboardPage extends StatefulWidget {
 
 class _WattDashboardPageState extends State<WattDashboardPage> {
   final DatabaseReference _historyRef = FirebaseDatabase.instance.ref('history');
+  
+  // Real-time Database references and local state
+  StreamSubscription? _realtimeSub;
+  Timer? _simulationTimer;
+  bool _isUsingFirebaseRealtime = false;
+
+  double vin = 0.0;
+  double iin = 0.0;
+  double pin = 0.0;
+  double vout = 0.0;
+  double iout = 0.0;
+  double pout = 0.0;
+
+  final List<FlSpot> _realtimeSpots = [];
+  final List<String> _realtimeLabels = [];
+  final int _maxRealtimePoints = 12;
+
+  double? _latestHistoryWatt;
+  ChartMode _chartMode = ChartMode.realtime;
 
   bool _isDark   = false;
-  bool _dayView  = true;  
   int  _navIndex = 0;     
   String? _selectedDate;
 
@@ -45,6 +66,84 @@ class _WattDashboardPageState extends State<WattDashboardPage> {
   }
 
   @override
+  void initState() {
+    super.initState();
+    _setupRealtimeData();
+  }
+
+  @override
+  void dispose() {
+    _realtimeSub?.cancel();
+    _simulationTimer?.cancel();
+    super.dispose();
+  }
+
+  void _addRealtimePoint(double wattValue) {
+    _realtimeSpots.add(FlSpot(_realtimeSpots.length.toDouble(), wattValue));
+    final nowStr = DateFormat('HH:mm:ss').format(DateTime.now());
+    _realtimeLabels.add(nowStr);
+    if (_realtimeSpots.length > _maxRealtimePoints) {
+      _realtimeSpots.removeAt(0);
+      _realtimeLabels.removeAt(0);
+      // Re-index x coordinates to keep them sequential
+      for (int i = 0; i < _realtimeSpots.length; i++) {
+        _realtimeSpots[i] = FlSpot(i.toDouble(), _realtimeSpots[i].y);
+      }
+    }
+  }
+
+  void _setupRealtimeData() {
+    // 1. Subscribe to Firebase Realtime Database at 'realtime' node
+    final DatabaseReference realtimeRef = FirebaseDatabase.instance.ref('realtime');
+    _realtimeSub = realtimeRef.onValue.listen((event) {
+      final data = event.snapshot.value;
+      if (data != null && data is Map) {
+        _isUsingFirebaseRealtime = true;
+        setState(() {
+          vin = double.tryParse(data['vin'].toString()) ?? 0.0;
+          iin = double.tryParse(data['iin'].toString()) ?? 0.0;
+          pin = double.tryParse(data['pin'].toString()) ?? 0.0;
+          vout = double.tryParse(data['vout'].toString()) ?? 0.0;
+          iout = double.tryParse(data['iout'].toString()) ?? 0.0;
+          pout = double.tryParse(data['pout'].toString()) ?? 0.0;
+          _addRealtimePoint(pout);
+        });
+      }
+    });
+
+    // 2. Start simulation timer as fallback if Firebase realtime node is empty/offline
+    _simulationTimer = Timer.periodic(const Duration(seconds: 2), (timer) {
+      if (_isUsingFirebaseRealtime) return;
+
+      setState(() {
+        // Fallback to the latest historical watt if available, else 8.5W
+        double basePout = _latestHistoryWatt ?? 8.5;
+        if (basePout <= 0.1) basePout = 8.5;
+
+        final double randomSec = DateTime.now().second.toDouble();
+        final double wave = 0.5 * (1 + (randomSec / 60.0)); // subtle wave modifier
+
+        final double randV = (DateTime.now().millisecond % 80 - 40) / 100.0; // -0.4V to +0.4V
+        final double randI = (DateTime.now().millisecond % 60 - 30) / 1000.0; // -0.03A to +0.03A
+
+        // Output parameters (Battery charging side)
+        vout = 12.4 + randV;
+        iout = (basePout / vout) * wave + randI;
+        if (iout < 0) iout = 0;
+        pout = vout * iout;
+
+        // Input parameters (Solar panel side) - higher voltage and input watt (considering efficiency)
+        vin = 18.2 + randV * 1.5;
+        double efficiency = 0.88 + (DateTime.now().millisecond % 5) / 100.0; // 88% - 92% efficiency
+        pin = pout / efficiency;
+        iin = pin / vin;
+
+        _addRealtimePoint(pout);
+      });
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
     AppColors.isDark = _isDark;
     return Scaffold(
@@ -57,7 +156,7 @@ class _WattDashboardPageState extends State<WattDashboardPage> {
             List<FlSpot> spots = [];
             List<EnergyData> historyList = [];
             List<String> weekLabels = [];
-            String latestWatt = '0.0';
+            String latestWatt = '0.00';
             String latestAmp  = '0.00';
             
             String displayDate = DateFormat('yyyy-MM-dd').format(DateTime.now());
@@ -74,7 +173,7 @@ class _WattDashboardPageState extends State<WattDashboardPage> {
                 displayDate = availableDates.first;
               }
 
-              if (_dayView) {
+              if (_chartMode == ChartMode.daily || _chartMode == ChartMode.realtime) {
                 final dayRaw = _convertToMap(raw[displayDate]);
                 dayRaw.forEach((key, value) {
                   final hour = int.tryParse(key) ?? 0;
@@ -94,8 +193,9 @@ class _WattDashboardPageState extends State<WattDashboardPage> {
                 }
 
                 if (historyList.isNotEmpty) {
-                  latestWatt = historyList.last.watt.toStringAsFixed(1);
+                  latestWatt = historyList.last.watt.toStringAsFixed(2);
                   latestAmp  = historyList.last.amp.toStringAsFixed(2);
+                  _latestHistoryWatt = historyList.last.watt;
                   historyList = historyList.reversed.toList();
                 }
               } else {
@@ -127,8 +227,9 @@ class _WattDashboardPageState extends State<WattDashboardPage> {
                 }
                 
                 if (historyList.isNotEmpty) {
-                  latestWatt = historyList.last.watt.toStringAsFixed(1);
+                  latestWatt = historyList.last.watt.toStringAsFixed(2);
                   latestAmp  = historyList.last.amp.toStringAsFixed(2);
+                  _latestHistoryWatt = historyList.last.watt;
                   historyList = historyList.reversed.toList();
                 }
               }
@@ -143,17 +244,26 @@ class _WattDashboardPageState extends State<WattDashboardPage> {
                 Expanded(
                   child: _navIndex == 0
                     ? _buildDashboard(spots, historyList, latestWatt, latestAmp, displayDate, weekLabels)
-                    : HistoryList(
-                        dates: availableDates,
-                        selectedDate: _selectedDate,
-                        onDateSelected: (date) {
-                          setState(() {
-                            _selectedDate = date;
-                            _dayView = true;
-                            _navIndex = 0; 
-                          });
-                        },
-                      ),
+                    : _navIndex == 1
+                      ? HistoryList(
+                          dates: availableDates,
+                          selectedDate: _selectedDate,
+                          onDateSelected: (date) {
+                            setState(() {
+                              _selectedDate = date;
+                              _chartMode = ChartMode.daily;
+                              _navIndex = 0; 
+                            });
+                          },
+                        )
+                      : InOutPage(
+                          vin: vin,
+                          iin: iin,
+                          pin: pin,
+                          vout: vout,
+                          iout: iout,
+                          pout: pout,
+                        ),
                 ),
                 BottomNav(
                   navIndex: _navIndex,
@@ -178,20 +288,30 @@ class _WattDashboardPageState extends State<WattDashboardPage> {
             watt: watt,
             amp: amp,
             dateStr: displayDate,
-            dayView: _dayView,
+            dayView: _chartMode != ChartMode.weekly,
+          ),
+          const SizedBox(height: 14),
+          InOutCard(
+            vin: vin,
+            iin: iin,
+            pin: pin,
+            vout: vout,
+            iout: iout,
+            pout: pout,
           ),
           const SizedBox(height: 14),
           TrendChart(
-            spots: spots,
+            spots: _chartMode == ChartMode.realtime ? _realtimeSpots : spots,
             weekLabels: weekLabels,
-            dayView: _dayView,
-            onToggleView: (isDay) => setState(() => _dayView = isDay),
+            realtimeLabels: _realtimeLabels,
+            chartMode: _chartMode,
+            onModeChanged: (mode) => setState(() => _chartMode = mode),
           ),
           const SizedBox(height: 14),
           ActivityLogs(
             list: historyList,
             weekLabels: weekLabels,
-            dayView: _dayView,
+            dayView: _chartMode != ChartMode.weekly,
           ),
           const SizedBox(height: 8),
         ],

@@ -22,6 +22,7 @@ class BottomNav extends StatelessWidget {
         children: [
           _navItem(0, Icons.home_outlined, 'หน้าหลัก'),
           _navItem(1, Icons.history_rounded, 'ประวัติ'),
+          _navItem(2, Icons.swap_horiz_rounded, 'ขาเข้า/ขาออก'),
         ],
       ),
     );

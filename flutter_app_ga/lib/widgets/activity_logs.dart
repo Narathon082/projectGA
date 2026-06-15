@@ -133,7 +133,7 @@ class ActivityLogs extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
                   Text(
-                    data.watt.toStringAsFixed(1),
+                    data.watt.toStringAsFixed(2),
                     style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w800,
