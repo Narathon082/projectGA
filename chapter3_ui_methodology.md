@@ -6,7 +6,7 @@
 
 ### 3.1 ส่วนการทำงานและรายละเอียดอุปกรณ์ฮาร์ดแวร์ (Hardware Details and Specifications)
 
-การตรวจวัดปริมาณกระแสไฟฟ้าและกำลังไฟฟ้าจริงจำต้องอาศัยฮาร์ดแวร์ (Hardware Core) ที่มีความแม่นยำสูง เชื่อมต่อผ่านระบบเซ็นเซอร์และการประมวลผลของไมโครคอนโทรลเลอร์ โดยมีรายละเอียดโครงสร้างอุปกรณ์ดังนี้:
+การตรวจวัดปริมาณกระแสไฟฟ้าและกำลังไฟฟ้าจริงจำต้องอาศัยฮาร์ดแวร์ (Hardware Core) ที่มีความแม่นยำสูง เชื่อมต่อผ่านระบบเซ็นเซอร์และการประมวลผลของไมโครคอนโทรลเลอร์ โดยตัวบอร์ดคอนโทรลเลอร์จะรองรับการรันเฟิร์มแวร์ระบบชาร์จควบคุม MPPT ทั้งแบบวิธีรบกวนและสังเกต (Perturb and Observe - [PnOmppt.ino](file:///c:/ProjectFlutter/projectGA/hardware/PnOmppt/PnOmppt.ino)) และวิธีกรรมวิธีทางพันธุกรรม (Genetic Algorithm - [Gamppt.ino](file:///c:/ProjectFlutter/projectGA/hardware/Gamppt/Gamppt.ino)) ตามขอบเขตการทดสอบ โดยมีรายละเอียดโครงสร้างอุปกรณ์ดังนี้:
 
 #### 3.1.1 ส่วนประมวลผลหลัก (Microcontroller Unit - MCU)
 * **ESP32 DevKit V1 (30-pin Board)**:
@@ -29,26 +29,16 @@
 
 ### 3.2 ขั้นตอนการรับส่งข้อมูลทางกายภาพและระบบคลาวด์ (Data Transmission Flow)
 
-1. **การวัดสัญญาณทางไฟฟ้า (Electrical Sensor Measurement)**:
-   * อุปกรณ์เซ็นเซอร์ PZEM-004T วัดกระแสไฟและกำลังไฟฟ้าของเครื่องใช้ไฟฟ้าที่เชื่อมโยงอยู่ จากนั้นส่งผ่านสัญญาณอนุกรมไปยัง ESP32
-2. **การซิงโครไนซ์เวลาและจัดแพ็กเกจ (NTP Synchronization & JSON Packaging)**:
-   * ไมโครคอนโทรลเลอร์ ESP32 เชื่อมต่อกับเครือข่ายอินเทอร์เน็ตไร้สาย ซิงโครไนซ์เวลาปัจจุบันผ่านโปรโตคอล **NTP (Network Time Protocol)** จากเซิร์ฟเวอร์เวลา NTP ในประเทศ (เช่น `pool.ntp.org` หรือ `time.uni.net.th`) เพื่อหาคีย์ วันที่ปัจจุบัน (YYYY-MM-DD) และชั่วโมงปัจจุบัน (HH)
-   * แปลงค่ากำลังไฟฟ้า (วัตต์) และกระแสไฟฟ้า (แอมป์) ออกมาอยู่ในรูปโครงสร้าง **JSON Object**:
-     ```json
-     {
-       "watt": 120.5,
-       "amp": 1.25
-     }
-     ```
-3. **การส่งขึ้น Firebase (Data Upload)**:
-   * อัปโหลดไฟล์ข้อความ JSON ขึ้นสู่ระบบคลาวด์คิวรี **Firebase Realtime Database** ที่โหนดย่อยเฉพาะตามวันเวลาจริง: `history/YYYY-MM-DD/HH`
+การรับส่งข้อมูลพารามิเตอร์ของระบบวัดค่าพลังงานแบ่งออกเป็น 2 ช่องทางหลัก (Dual-Channel Telemetry):
+1. **ช่องข้อมูลสดเรียลไทม์ (Real-time Streaming Channel)**: ข้อมูลค่าแรงดันไฟฟ้า กระแสไฟฟ้า และกำลังวัตต์ทันที ณ วินาทีปัจจุบัน ทั้งฝั่งขาเข้าจากแผงโซลาร์เซลล์ (Solar Input: Vin, Iin, Pin) และฝั่งขาออกที่ชาร์จประจุเข้าสู่แบตเตอรี่ (Battery Output: Vout, Iout, Pout) จะถูกอัปเดตอย่างต่อเนื่องเพื่อสะท้อนสถานะการทำงานปัจจุบัน
+2. **ช่องข้อมูลเฉลี่ยสะสมรายชั่วโมง (1-Hour Running Average Channel)**: เพื่อป้องกันการจัดเก็บข้อมูลที่หนาแน่นและมีความผันผวนสูง เฟิร์มแวร์บนชิป ESP32 ได้ติดตั้ง **อัลกอริทึมเฉลี่ยสะสมรายชั่วโมง (1-Hour Running Average Algorithm)** โดยบอร์ดจะทำการอ่านค่าพลังงานทุก ๆ 15 วินาที แล้วทำการรวมสะสมค่ากำลังวัตต์และกระแสไฟฟ้าไว้ในหน่วยความจำชั่วคราว จากนั้นทำการหารเฉลี่ยสะสมปัจจุบันยิงอัปโหลดข้อมูลทดแทนที่โหนดของชั่วโมงนั้น ๆ ผ่านเมธอด `HTTP PATCH` และทำการรีเซ็ตตัวแปรเริ่มต้นรอบใหม่เมื่อนาฬิกาของระบบเปลี่ยนผ่านเป็นชั่วโมงถัดไป
 
 ```mermaid
 graph LR
-    A[เครื่องใช้ไฟฟ้า] -->|วัดปริมาณไฟ| B[เซ็นเซอร์วัดไฟฟ้า PZEM-004T / ACS712]
+    A[เครื่องใช้ไฟฟ้า / โซลาร์] -->|วัดปริมาณไฟ| B[เซ็นเซอร์วัดไฟฟ้า PZEM-004T / ACS712]
     B -->|สัญญาณอนุกรม UART| C[ไมโครคอนโทรลเลอร์ ESP32]
     D[NTP Time Server] -->|เวลาปัจจุบันผ่านอินเทอร์เน็ต| C
-    C -->|อัปโหลด JSON ผ่าน Wi-Fi| E((Firebase Realtime Database))
+    C -->|อัปโหลด PATCH/PUT ผ่าน Wi-Fi| E((Firebase Realtime Database))
     E -->|สมัครรับข้อมูลแบบเรียลไทม์| F[แอพพลิเคชัน Flutter]
 ```
 
@@ -58,40 +48,37 @@ graph LR
 
 การจัดเก็บข้อมูลบนฐานข้อมูลระบบคลาวด์ของ Firebase ออกแบบโครงสร้างในลักษณะลำดับชั้น **JSON Tree** ภายใต้ URL หลักของโครงการ `https://projectga-d3f20-default-rtdb.asia-southeast1.firebasedatabase.app/` เพื่อรองรับการสืบค้นข้อมูลตามวันเวลาและรองรับการดึงข้อมูลแบบสตรีมมิ่ง โดยมีรายละเอียดโครงสร้างข้อมูลดังนี้:
 
-* **โหนดหลัก (Root Node)**: `history`
-  * เป็นสารบัญหลักที่ใช้เก็บบันทึกประวัติพลังงานทั้งหมดของระบบ
-* **โหนดวันที่ (Date Key)**: `YYYY-MM-DD` (เช่น `2026-05-30`, `2026-06-01`)
-  * โหนดระดับที่สองใช้รูปแบบ วันที่ปัจจุบัน คั่นด้วยเครื่องหมายลบ เพื่อแยกแยะประวัติการใช้ไฟฟ้าในแต่ละวัน ทำหน้าที่เป็นดัชนี (Index) สำหรับคัดกรองวันที่ต้องการสืบค้นย้อนหลัง
-* **โหนดชั่วโมง (Hour Key)**: `HH` (ช่วงค่าตัวเลขระหว่าง `0` ถึง `23` เช่น `8`, `10`)
-  * โหนดระดับที่สามแยกแยะเวลาเป็นรายชั่วโมง โดยตัดเลข 0 ที่อยู่ข้างหน้าออก (เช่น ชั่วโมงที่ 8 ใช้ชื่อคีย์ `8` แทน `08`) เพื่อความกะทัดรัดของคีย์และสะดวกต่อการแปลงค่าตัวแปรในโปรแกรมซอฟต์แวร์
-* **ฟิลด์ข้อมูลพารามิเตอร์พลังงานไฟฟ้า (Data Fields)**:
+* **โหนดค่าสดปัจจุบัน (`realtime` Node)**: จัดเก็บพารามิเตอร์พลังงานชั่วขณะสำหรับแสดงทิศทางการไหลและการวิเคราะห์ประสิทธิภาพชาร์จ ประกอบด้วย:
+  * `vin`: แรงดันไฟฟ้าขาเข้าจากแผงโซลาร์เซลล์ (หน่วย: V)
+  * `iin`: กระแสไฟฟ้าขาเข้าจากแผงโซลาร์เซลล์ (หน่วย: A)
+  * `pin`: กำลังไฟฟ้าขาเข้าจากแผงโซลาร์เซลล์ (หน่วย: W)
+  * `vout`: แรงดันไฟฟ้าฝั่งจ่ายชาร์จแบตเตอรี่ (หน่วย: V)
+  * `iout`: กระแสไฟฟ้าฝั่งจ่ายชาร์จแบตเตอรี่ (หน่วย: A)
+  * `pout`: กำลังไฟฟ้าฝั่งจ่ายชาร์จแบตเตอรี่ (หน่วย: W)
+* **โหนดประวัติย้อนหลัง (`history` Node)**: โหนดบันทึกประวัติการใช้กำลังไฟฟ้าเฉลี่ยรายชั่วโมงแยกตามวันเวลา โดยมีโครงสร้างย่อยคือ `history/YYYY-MM-DD/HH`:
   * `amp`: ค่ากระแสไฟฟ้าเฉลี่ยในชั่วโมงนั้น (ชนิดข้อมูล: ทศนิยม Double, หน่วย: Ampere: A)
-  * `watt`: ค่ากำลังไฟฟ้าจริงที่ใช้งานในชั่วโมงนั้น (ชนิดข้อมูล: จำนวนเต็ม/ทศนิยม, หน่วย: Watt: W)
+  * `watt`: ค่ากำลังไฟฟ้าเฉลี่ยจริงในชั่วโมงนั้น (ชนิดข้อมูล: จำนวนเต็ม/ทศนิยม, หน่วย: Watt: W)
 
 #### ตัวอย่างโครงสร้างข้อมูล JSON ที่จัดเก็บจริงใน Firebase Realtime Database:
 ```json
 {
+  "realtime": {
+    "vin": 18.45,
+    "iin": 1.22,
+    "pin": 22.50,
+    "vout": 12.60,
+    "iout": 1.60,
+    "pout": 20.16
+  },
   "history": {
-    "2026-05-30": {
+    "2026-06-15": {
       "8": {
-        "amp": 5.5,
-        "watt": 150
+        "amp": 1.05,
+        "watt": 12.50
       },
-      "10": {
-        "amp": 4.8,
-        "watt": 120
-      }
-    },
-    "2026-06-01": {
       "9": {
-        "amp": 6.2,
-        "watt": 180
-      }
-    },
-    "2026-06-02": {
-      "14": {
-        "amp": 5.0,
-        "watt": 135
+        "amp": 1.55,
+        "watt": 19.30
       }
     }
   }
@@ -113,81 +100,77 @@ actor Hardware as "อุปกรณ์ฮาร์ดแวร์ (ESP32)"
 actor Firebase as "ฐานข้อมูล (Firebase DB)"
 
 rectangle "ระบบติดตามพลังงานไฟฟ้า (Energy Monitor System)" {
-    usecase UC1 as "ดูสถานะกำลังไฟฟ้าและกระแสไฟฟ้าแบบเรียลไทม์"
-    usecase UC2 as "สลับมุมมองแนวโน้มรายวัน/รายสัปดาห์"
-    usecase UC3 as "ดูและค้นหารายการประวัติย้อนหลังตามวันที่"
-    usecase UC4 as "สลับโหมดสีการแสดงผล (Dark/Light Theme)"
-    usecase UC5 as "วัดกระแสไฟและกำลังไฟฟ้าเครื่องใช้ไฟฟ้า"
-    usecase UC6 as "ส่งข้อมูลการใช้ไฟขึ้นระบบคลาวด์แบบเรียลไทม์"
+    usecase UC1 as "ดูสถานะกำลังวัตต์และแผงไหลเวียนพลังงานเรียลไทม์ (Power Flow)"
+    usecase UC2 as "วิเคราะห์ประสิทธิภาพการชาร์จ (Efficiency) & กำลังสูญเสีย (Loss)"
+    usecase UC3 as "ตรวจสอบโหมดการชาร์จแบตเตอรี่แบบอัตโนมัติ (Bulk/Absorption/Float)"
+    usecase UC4 as "สลับแกนพล็อตกราฟแนวโน้ม 3 รูปแบบ (Realtime/Day/Week)"
+    usecase UC5 as "ค้นหาและสืบค้นบันทึกประวัติไฟฟ้าตามวันที่"
+    usecase UC6 as "สลับโทนสีหน้าต่างแสดงผลกลางคืน (Dark Mode Toggle)"
+    usecase UC7 as "วัดประสิทธิภาพพลังงาน & หาจุดทำงานสูงสุด (MPPT Control)"
+    usecase UC8 as "อัปโหลดพารามิเตอร์กระแสและวัตต์แบบเฉลี่ยสะสมรายชั่วโมง"
 }
 
 User --> UC1
 User --> UC2
 User --> UC3
 User --> UC4
+User --> UC5
+User --> UC6
 
-Hardware --> UC5
-Hardware --> UC6
+Hardware --> UC7
+Hardware --> UC8
 
-UC6 --> Firebase
+UC8 --> Firebase
 Firebase -.-> UC1
-Firebase -.-> UC3
+Firebase -.-> UC5
 ```
 
 ---
 
 ### 3.5 แผนผังแสดงขั้นตอนการทำงานของระบบ (Application Working Flowchart)
 
-แผนผังขั้นตอนการทำงาน (Flowchart) ต่อไปนี้แสดงขั้นตอนการทำงานทั้งหมดของระบบ ตั้งแต่จุดเริ่มต้นฝั่งฮาร์ดแวร์ การส่งข้อมูล ตลอดจนระบบแสดงผลและการโต้ตอบในตัวแอปพลิเคชัน:
+แผนผังขั้นตอนการทำงาน (Flowchart) แสดงโครงสร้างตรรกะการประมวลผลและการนำทางในแอปพลิเคชัน Flutter:
 
 ![System Flowchart](file:///c:/ProjectFlutter/projectGA/system_flowchart.png)
 
 ```mermaid
 flowchart TD
-    HW_Start([ฝั่งอุปกรณ์ฮาร์ดแวร์]) --> HW_Read[เซ็นเซอร์ตรวจวัดค่า Watt และ Amp ของเครื่องใช้ไฟฟ้า]
-    HW_Read --> HW_Time[ESP32 ซิงโครไนซ์เวลาปัจจุบันผ่าน NTP Server]
-    HW_Time --> HW_Send[ส่งข้อมูลในรูปแบบ JSON ไปยัง Firebase Realtime Database]
+    HW_Start([ฝั่งอุปกรณ์ฮาร์ดแวร์]) --> HW_Read[เซ็นเซอร์วัดพารามิเตอร์แรงดันและกระแสไฟฟ้า]
+    HW_Read --> HW_Time[ESP32 รันระบบควบคุมกำลังและคำนวณเฉลี่ยรายชั่วโมง]
+    HW_Time --> HW_Send[อัปเดตข้อมูลขึ้น Firebase ที่ realtime และ history/YYYY-MM-DD/HH]
     HW_Send --> Firebase[(Firebase Realtime Database)]
     
     App_Start([ฝั่งโมบายแอพพลิเคชัน]) --> App_Init[เริ่มต้น Flutter Engine & เชื่อมต่อ Firebase]
-    App_Init --> Stream[StreamBuilder สมัครรับข้อมูลเรียลไทม์จาก Firebase]
+    App_Init --> Sim_Start[เริ่มระบบจำลองข้อมูลเรียลไทม์ Simulation Engine Fallback]
+    Sim_Start --> Stream[StreamBuilder สมัครรับข้อมูลเรียลไทม์จาก Firebase]
     Firebase -.-> Stream
     
-    Stream --> CheckData{มีข้อมูลในระบบ?}
-    CheckData -- ไม่มี --> Wait[แสดงข้อความ Waiting for data...]
-    CheckData -- มี --> SortDates[ดึงคีย์รายการวันที่ทั้งหมด & เรียงจากใหม่สุด]
+    Stream --> NavSelect{ผู้ใช้งานเลือกหน้าด้วย Bottom Navigation Bar?}
     
-    SortDates --> SelectDate[กำหนดค่าวันที่เลือกแสดงผล: displayDate]
-    SelectDate --> CheckView{เลือกมุมมองแบบใด?}
-    
-    CheckView -- รายวัน (Day View) --> ParseDay[ดึงข้อมูลรายชั่วโมงของวันนั้นๆ แปลงเป็นจุดแกนกราฟและลิสต์รายชั่วโมง]
-    CheckView -- รายสัปดาห์ (Week View) --> ParseWeek[ดึงข้อมูลสูงสุด 7 วันย้อนหลัง แปลงเป็นจุดแกนกราฟและลิสต์รายวัน]
-    
-    ParseDay --> Render[เรนเดอร์โครงสร้างหน้าจอหลัก]
-    ParseWeek --> Render
-    
-    Render --> ShowDashboard[แสดงผลหน้า Dashboard: TopBar, PowerCard, TrendChart, ActivityLogs]
-    ShowDashboard --> UserInteract{การโต้ตอบของผู้ใช้งาน?}
-    
-    UserInteract -- กดสลับธีม --> ChangeTheme[สลับโหมด AppColors.isDark -> รีเฟรชสเกลสีธีมหน้าจอ] --> ShowDashboard
-    UserInteract -- กดสลับ Day/Week --> ChangeView[ปรับเปลี่ยนค่า _dayView -> รีสเกลแกนข้อมูลกราฟ] --> ShowDashboard
-    UserInteract -- กดเลือกเมนูประวัติ --> ShowHistory[แสดง HistoryList แปลงรูปแบบวันที่เป็น D/M/Y]
+    NavSelect -- ดัชนี 0: หน้าหลัก --> ShowDashboard[แสดงผลหน้า Dashboard: TopBar, PowerCard, InOutCard, TrendChart, ActivityLogs]
+    NavSelect -- ดัชนี 1: ประวัติ --> ShowHistory[แสดง HistoryList รายการประวัติวันที่ทั้งหมด]
+    NavSelect -- ดัชนี 2: ขาเข้า/ขาออก --> ShowInOut[คำนวณประสิทธิภาพชาร์จ & พลังงานสูญเสีย แสดงเกจหน้าปัดและตาราง]
     
     ShowHistory --> SelectHistDate[ผู้ใช้กดเลือกวันที่ต้องการดู]
-    SelectHistDate --> UpdateState[อัปเดต _selectedDate & สลับหน้าต่างกลับมาแดชบอร์ด index 0] --> Stream
+    SelectHistDate --> UpdateState[อัปเดต _selectedDate & สลับหน้าต่างกลับมาหน้าหลัก index 0] --> Stream
+    
+    ShowDashboard --> UserInteract{การโต้ตอบของผู้ใช้งาน?}
+    UserInteract -- กดสลับธีม --> ChangeTheme[สลับโหมด AppColors.isDark -> รีเฟรชสีธีมหน้าจอ] --> ShowDashboard
+    UserInteract -- กดสลับโหมดกราฟ --> ChangeChartMode[ปรับเปลี่ยน _chartMode Realtime/Day/Week] --> ShowDashboard
 ```
 
 ---
 
 ### 3.6 โครงสร้างและการจัดวางหน้าจอหลัก (Main Screen Architecture)
 
-โครงสร้างหน้าจอถูกควบคุมโดยคลาส [WattDashboardPage](file:///c:/ProjectFlutter/projectGA/flutter_app_ga/lib/graph_page.dart) ซึ่งเป็น `StatefulWidget` ทำหน้าที่เป็นผู้ประสานงานหลักในการจัดโครงสร้างหน้าและการสลับมุมมองระหว่าง **หน้าหลัก (Dashboard)** และ **หน้าประวัติ (History List)** โดยใช้โครงร่างโครงสร้างแบบชั้น (Layered Layout) ร่วมกับ `Scaffold` ดังนี้:
+โครงสร้างหน้าจอถูกควบคุมโดยคลาส [WattDashboardPage](file:///c:/ProjectFlutter/projectGA/flutter_app_ga/lib/graph_page.dart) ซึ่งเป็น `StatefulWidget` ทำหน้าที่เป็นผู้ประสานงานหลักในการจัดโครงสร้างหน้าและการสลับมุมมองระหว่าง **หน้าหลัก (Dashboard)**, **หน้าประวัติ (History List)** และ **หน้าวิเคราะห์พลังงานละเอียด (In/Out Analysis)** โดยใช้โครงร่างโครงสร้างแบบชั้น (Layered Layout) ร่วมกับ `Scaffold` ดังนี้:
 
 1. **ส่วนบน (TopBar)**: แสดงโลโก้ ชื่อแอพพลิเคชัน (Energy Monitor) และปุ่มเปลี่ยนโหมดกลางคืน (Dark Mode Toggle)
 2. **ส่วนกลาง (Body)**: เปลี่ยนมุมมองตามแท็บนำทางที่เลือก (Navigation Index):
-   * **Dashboard View**: แสดงแผงควบคุมหลัก ได้แก่ การ์ดกำลังไฟฟ้าแบบเรียลไทม์ กราฟเส้นแนวโน้มการใช้ไฟ และตารางประวัติกิจกรรมชั่วโมงต่อชั่วโมง
-   * **History View**: แสดงรายการประวัติวันที่สามารถเลือกดูย้อนหลังได้ โดยดึงข้อมูลจาก Firebase Realtime Database
-3. **ส่วนล่าง (BottomNav)**: แถบนำทางด้านล่างสำหรับการสลับมุมมองระหว่าง หน้าหลัก (หน้าแรก) และ ประวัติ
+   * **Dashboard View (Index 0)**: แสดงแผงควบคุมหลัก ได้แก่ การ์ดกำลังไฟฟ้าเฉลี่ยประจำวัน การ์ดอัตราการไหลของกำลังไฟแบบเรียลไทม์ (InOutCard) กราฟเส้นแนวโน้มแบบสลับได้ 3 โหมด และตารางประวัติกิจกรรมชั่วโมงต่อชั่วโมง
+   * **History View (Index 1)**: แสดงรายการประวัติวันที่สามารถเลือกดูย้อนหลังได้ โดยดึงข้อมูลจาก Firebase Realtime Database
+   * **In/Out Analysis View (Index 2)**: หน้าจอวิเคราะห์ความสมดุลของการแปลงกำลังไฟฟ้า แสดงเกจประสิทธิภาพการประจุไฟ (Efficiency %) กำลังไฟฟ้าสูญเสีย (Power Loss) ขั้นตอนโหมดการชาร์จแบตเตอรี่ และตารางรายละเอียดพารามิเตอร์แผงและแบตเตอรี่
+3. **ส่วนล่าง (BottomNav)**: แถบนำทางด้านล่างสำหรับการสลับมุมมองระหว่าง 3 หน้าต่างย่อยดังกล่าว
 
 ---
 
@@ -207,39 +190,40 @@ void main() async {
 }
 ```
 
-#### 3.7.2 การดึงข้อมูลและเชื่อมโยงข้อมูลแบบเรียลไทม์ (Firebase Realtime Stream Integration)
-ระบบใช้โครงสร้าง `StreamBuilder` ในคลาส [WattDashboardPage](file:///c:/ProjectFlutter/projectGA/flutter_app_ga/lib/graph_page.dart) เพื่อสมัครรับข้อมูล (Subscribe) จากตำแหน่ง `history` บน Firebase Realtime Database ทำให้หน้าจอแอพพลิเคชันสามารถรีเรนเดอร์ตัวเองใหม่โดยอัตโนมัติทันทีที่มีการเปลี่ยนแปลงข้อมูลจากฝั่งฮาร์ดแวร์:
+#### 3.7.2 ระบบจำลองข้อมูลแบบเรียลไทม์ (Simulation Engine Fallback & Telemetry Integration)
+ภายในคลาส [_WattDashboardPageState](file:///c:/ProjectFlutter/projectGA/flutter_app_ga/lib/graph_page.dart) มีการตั้งตัวจับเวลาเพื่อจำลองข้อมูลแบบเรียลไทม์ขึ้นมาแสดงผลทดแทนอัตโนมัติ ในกรณีที่สัญญาณเชื่อมต่อกับบอร์ดขาดหาย เพื่อป้องกันการค้างของ UI และสร้างความลื่นไหลของพารามิเตอร์พลังงาน:
 
 ```dart
-// โค้ดส่วนดึงข้อมูลประวัติและค่าเรียลไทม์จาก Firebase Realtime Database (graph_page.dart)
-class _WattDashboardPageState extends State<WattDashboardPage> {
-  // การกำหนดตำแหน่งอ้างอิงของโฟลเดอร์ใน Database
-  final DatabaseReference _historyRef = FirebaseDatabase.instance.ref('history');
+// โค้ดส่วนระบบจำลองและควบคุมตัวแปรทางฟิสิกส์ (graph_page.dart)
+void _setupRealtimeData() {
+  _simulationTimer = Timer.periodic(const Duration(seconds: 2), (timer) {
+    setState(() {
+      // ดึงค่ากำลังวัตต์ล่าสุดจากประวัติระบบเพื่อเป็นฐานคำนวณ
+      double basePout = _latestHistoryWatt ?? 8.5;
+      if (basePout <= 0.1) basePout = 8.5;
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.bg,
-      body: SafeArea(
-        child: StreamBuilder(
-          stream: _historyRef.onValue, // เชื่อมโยง Stream จาก Firebase
-          builder: (context, snapshot) {
-            // เมื่อได้รับข้อมูลจาก Firebase สำเร็จ
-            if (snapshot.hasData && snapshot.data!.snapshot.value != null) {
-              final raw = snapshot.data!.snapshot.value as Map;
-              
-              // ดึงคีย์ข้อมูลวันที่ทั้งหมดเพื่อแสดงผลในรายการประวัติ
-              availableDates = raw.keys.map((e) => e.toString()).toList();
-              availableDates.sort((a, b) => b.compareTo(a)); // เรียงลำดับวันล่าสุดขึ้นก่อน
-              
-              // ... ขั้นตอนการคำนวณและแปลงค่ากำลังไฟฟ้าเพื่อส่งต่อไปยัง Widget อื่น ๆ ...
-            }
-            // ...
-          },
-        ),
-      ),
-    );
-  }
+      final double randomSec = DateTime.now().second.toDouble();
+      final double wave = 0.5 * (1 + (randomSec / 60.0)); // รูปแบบคลื่นสัญญาณจำลอง
+
+      final double randV = (DateTime.now().millisecond % 80 - 40) / 100.0; // ค่าแกว่งแรงดัน +/- 0.4V
+      final double randI = (DateTime.now().millisecond % 60 - 30) / 1000.0; // ค่าแกว่งกระแส +/- 0.03A
+
+      // คำนวณพารามิเตอร์ชาร์จขาออกแบตเตอรี่ (Battery Output)
+      vout = 12.4 + randV;
+      iout = (basePout / vout) * wave + randI;
+      if (iout < 0) iout = 0;
+      pout = vout * iout;
+
+      // คำนวณพารามิเตอร์แผงขาเข้า (Solar Input) โดยอิงตามสัมประสิทธิ์ประสิทธิภาพชาร์จประมาณ 88%-92%
+      vin = 18.2 + randV * 1.5;
+      double efficiency = 0.88 + (DateTime.now().millisecond % 5) / 100.0;
+      pin = pout / efficiency;
+      iin = pin / vin;
+
+      // พล็อตจุดจุดข้อมูลเรียลไทม์ไปยังหน่วยความจำแสดงกราฟเส้น
+      _addRealtimePoint(pout);
+    });
+  });
 }
 ```
 
@@ -285,10 +269,51 @@ class PowerCard extends StatelessWidget {
 }
 ```
 
-#### 3.8.3 [TrendChart (กราฟแนวโน้มแสดงผลการใช้พลังงาน)](file:///c:/ProjectFlutter/projectGA/flutter_app_ga/lib/widgets/trend_chart.dart)
-ใช้โมดูลกราฟของ `fl_chart` ในการแสดงแนวโน้มแบบเส้นเชื่อมความหนา `3.5` และใช้โครงร่างความโปร่งใสแบบไล่โทนสี (Gradient) แสดงผลข้อมูลได้ทั้งแบบ Day (ข้อมูลประชากรชั่วโมงต่อชั่วโมง) และ Week (ข้อมูลประชากรแบบ 7 วันล่าสุด)
+#### 3.8.3 [InOutCard (การ์ดเปรียบเทียบการไหลของกำลังไฟ)](file:///c:/ProjectFlutter/projectGA/flutter_app_ga/lib/widgets/in_out_card.dart)
+แสดงสตรีมปริมาณการไหลแบบสองช่องขนาน (Solar Input vs Battery Output) บนหน้าแดชบอร์ดหลักเพื่อให้ทราบค่าแรงดัน กระแส และวัตต์ ณ ปัจจุบันในหน้าเดียว:
+```dart
+// โครงสร้างส่วนเปรียบเทียบข้อมูลเข้าออกเบื้องต้น (in_out_card.dart)
+class InOutCard extends StatelessWidget {
+  final double vin;
+  final double iin;
+  final double pin;
+  final double vout;
+  final double iout;
+  final double pout;
 
-#### 3.8.4 [ActivityLogs (ส่วนแสดงประวัติกิจกรรมเชิงลึก)](file:///c:/ProjectFlutter/projectGA/flutter_app_ga/lib/widgets/activity_logs.dart)
+  const InOutCard({
+    Key? key,
+    required this.vin,
+    required this.iin,
+    required this.pin,
+    required this.vout,
+    required this.iout,
+    required this.pout,
+  }) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      // ... กำหนดการตกแต่งขอบและกล่องแสงเงา ...
+      child: Row(
+        children: [
+          // ฝั่งขาเข้าแผงโซลาร์
+          Expanded(child: _buildColumn('ขาเข้า (Solar Input)', Icons.solar_power_rounded, Colors.amber, vin, iin, pin)),
+          // เส้นแบ่งแนวตั้ง
+          Container(width: 1, height: 90, color: AppColors.divider),
+          // ฝั่งขาออกแบตเตอรี่
+          Expanded(child: _buildColumn('ขาออก (Battery Out)', Icons.battery_charging_full_rounded, Colors.green, vout, iout, pout)),
+        ],
+      ),
+    );
+  }
+}
+```
+
+#### 3.8.4 [TrendChart (กราฟแนวโน้มแสดงผลการใช้พลังงาน)](file:///c:/ProjectFlutter/projectGA/flutter_app_ga/lib/widgets/trend_chart.dart)
+ใช้โมดูลกราฟของ `fl_chart` ในการแสดงแนวโน้มแบบเส้นเชื่อมความหนา `3.5` และใช้โครงร่างความโปร่งใสแบบไล่โทนสี (Gradient) แสดงผลข้อมูลได้ทั้งแบบ Realtime (ข้อมูลเส้นขยับได้), Day (ข้อมูลประชากรรายชั่วโมง) และ Week (ข้อมูลประชากรสูงสุดย้อนหลัง 7 วัน)
+
+#### 3.8.5 [ActivityLogs (ส่วนแสดงประวัติกิจกรรมเชิงลึก)](file:///c:/ProjectFlutter/projectGA/flutter_app_ga/lib/widgets/activity_logs.dart)
 มีลอจิกแปลงรูปแบบช่วงวันที่ในการแสดงบันทึกแบบแถวรายการย้อนหลังหากมองผ่านมุมมองรายสัปดาห์:
 
 ```dart
@@ -305,44 +330,57 @@ if (dayView) {
 }
 ```
 
-#### 3.8.5 [HistoryList (ส่วนรายการประวัติการตรวจสอบย้อนหลัง)](file:///c:/ProjectFlutter/projectGA/flutter_app_ga/lib/widgets/history_list.dart)
-แสดงรายการคีย์ประวัติวันที่ที่นำมาเรียงเป็นปุ่มกด โดยลอจิกการแปลงรูปแบบจะแปลงก่อนส่งเข้าวาดข้อความเพื่อความสะดวกของมนุษย์ และส่งคีย์ดั้งเดิมกลับไปประมวลผลผ่าน `onDateSelected`:
+#### 3.8.6 [HistoryList (ส่วนรายการประวัติการตรวจสอบย้อนหลัง)](file:///c:/ProjectFlutter/projectGA/flutter_app_ga/lib/widgets/history_list.dart)
+แสดงรายการคีย์ประวัติวันที่ที่นำมาเรียงเป็นปุ่มกด โดยลอจิกการแปลงรูปแบบจะแปลงก่อนส่งเข้าวาดข้อความเพื่อความสะดวกของมนุษย์ และส่งคีย์ดั้งเดิมกลับไปประมวลผลผ่าน `onDateSelected` เพื่อคิวรีคลาวด์
+
+#### 3.8.7 [InOutPage (ส่วนหน้าจอวิเคราะห์สมดุลประสิทธิภาพพลังงาน)](file:///c:/ProjectFlutter/projectGA/flutter_app_ga/lib/in_out_page.dart)
+วิดเจ็ตหน้าแยกเฉพาะในการติดตามประสิทธิภาพการประจุพลังงานและการสูญเสียกำลังไฟฟ้าตามสมการและลอจิกการทำงานดังนี้:
+
+* **ประสิทธิภาพการชาร์จ (Charging Efficiency)**:
+  $$\eta = \left( \frac{P_{\text{out}}}{P_{\text{in}}} \right) \times 100\%$$
+* **กำลังไฟฟ้าสูญเสียในระบบ (Power Loss)**:
+  $$P_{\text{loss}} = P_{\text{in}} - P_{\text{out}}$$
+* **การแบ่งจำแนกโหมดการชาร์จแบตเตอรี่แบบอัตโนมัติ (Battery Charge Mode Detection)**:
+  * `Bulk Charge` (โหมดชาร์จเร็วประสิทธิภาพสูง): ประสิทธิภาพการชาร์จสูงกว่า 90% และมีกำลังวัตต์ขาเข้า ($P_{\text{in}} > 0.5\text{ W}$)
+  * `Absorption Charge` (โหมดชาร์จปกติแรงดันคงที่): ประสิทธิภาพการชาร์จอยู่ระหว่าง 70% ถึง 90%
+  * `Float Charge` (โหมดชาร์จประคองประจุ): ประสิทธิภาพการชาร์จต่ำกว่า 70%
 
 ```dart
-// โค้ดส่วนแสดงผลรายการประวัติย้อนหลัง (history_list.dart)
-class HistoryList extends StatelessWidget {
-  final List<String> dates;
-  final String? selectedDate;
-  final ValueChanged<String> onDateSelected;
+// โค้ดบางส่วนของการคำนวณและประมวลผลสถานะของ InOutPage (in_out_page.dart)
+class InOutPage extends StatelessWidget {
+  final double vin;
+  final double iin;
+  final double pin;
+  final double vout;
+  final double iout;
+  final double pout;
 
   // ...
 
   @override
   Widget build(BuildContext context) {
-    return ListView.builder(
-      itemCount: dates.length,
-      itemBuilder: (context, i) {
-        final date = dates[i];
-        final isSelected = date == (selectedDate ?? (dates.isNotEmpty ? dates.first : ''));
-        
-        // แยกส่วนคีย์ความปลอดภัย YYYY-MM-DD ออกเป็น D/M/Y
-        final parts = date.split('-');
-        final formattedDate = parts.length == 3 ? '${parts[2]}/${parts[1]}/${parts[0]}' : date;
+    // การคำนวณทางคณิตศาสตร์พลังงาน
+    final double efficiency = pin > 0 ? (pout / pin) * 100 : 0.0;
+    final double loss = pin > pout ? pin - pout : 0.0;
+    final double constrainedEfficiency = efficiency.clamp(0.0, 100.0);
 
-        return GestureDetector(
-          onTap: () => onDateSelected(date), // ส่งคีย์ดั้งเดิม YYYY-MM-DD กลับไปคิวรี Firebase
-          child: Container(
-            // ...
-            child: Text(
-              formattedDate, // แสดงผลวันที่ในหน้าจอเป็น D/M/Y 
-              style: TextStyle(
-                // ...
-              ),
-            ),
-          ),
-        );
-      },
-    );
+    // ลอจิกวิเคราะห์สถานะขั้นตอนของระบบควบคุม MPPT
+    String chargingStatus = 'ระบบไม่ทำงาน';
+    Color statusColor = AppColors.textMuted;
+    
+    if (pin > 0.5) {
+      if (efficiency > 90) {
+        chargingStatus = 'กำลังชาร์จประสิทธิภาพสูง (Bulk)';
+        statusColor = Colors.green;
+      } else if (efficiency > 70) {
+        chargingStatus = 'กำลังชาร์จปกติ (Absorption)';
+        statusColor = AppColors.primary;
+      } else {
+        chargingStatus = 'ประคองประจุชาร์จ (Float)';
+        statusColor = Colors.amber;
+      }
+    }
+    // ... เรนเดอร์หน้าจอพร้อมเกจแสดงผลแบบวงกลมและตารางค่าไฟฟ้าเข้า/ออก ...
   }
 }
 ```

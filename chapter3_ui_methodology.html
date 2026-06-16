@@ -172,9 +172,15 @@
             font-weight: 500;
             text-align: center;
             min-width: 250px;
-            max-width: 400px;
+            max-width: 420px;
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.02);
             margin: 2px 0;
+            transition: all 0.2s ease;
+        }
+
+        .flow-node:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(0,0,0,0.05);
         }
 
         .flow-node.start {
@@ -216,7 +222,7 @@
         .flow-row {
             display: flex;
             justify-content: center;
-            gap: 40px;
+            gap: 20px;
             width: 100%;
             margin: 10px 0;
         }
@@ -245,6 +251,8 @@
             border-radius: 12px;
             padding: 25px;
             margin: 25px 0;
+            gap: 10px;
+            flex-wrap: wrap;
         }
 
         .arch-block {
@@ -253,8 +261,8 @@
             border-radius: 8px;
             padding: 12px;
             text-align: center;
-            width: 130px;
-            font-size: 0.85rem;
+            width: 140px;
+            font-size: 0.82rem;
             font-weight: 500;
             box-shadow: 0 4px 6px rgba(0,0,0,0.02);
         }
@@ -362,14 +370,24 @@
             font-weight: 500;
             color: #6b21a8;
             text-align: center;
-            min-width: 80%;
+            min-width: 85%;
             box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+            transition: all 0.2s ease;
+        }
+
+        .usecase-pill:hover {
+            transform: scale(1.02);
+            background: #f3e8ff;
         }
 
         .usecase-pill.hw-use {
             background: #fffbeb;
             border-color: #fde68a;
             color: #92400e;
+        }
+
+        .usecase-pill.hw-use:hover {
+            background: #fef3c7;
         }
     </style>
 </head>
@@ -381,7 +399,7 @@
         <hr>
 
         <h3>3.1 ส่วนการทำงานและรายละเอียดอุปกรณ์ฮาร์ดแวร์ (Hardware Details and Specifications)</h3>
-        <p>การตรวจวัดปริมาณกระแสไฟฟ้าและกำลังไฟฟ้าจริงจำต้องอาศัยฮาร์ดแวร์ (Hardware Core) ที่มีความแม่นยำสูง เชื่อมต่อผ่านระบบเซ็นเซอร์และการประมวลผลของไมโครคอนโทรลเลอร์ โดยมีรายละเอียดโครงสร้างอุปกรณ์ดังนี้:</p>
+        <p>การตรวจวัดปริมาณกระแสไฟฟ้าและกำลังไฟฟ้าจริงจำต้องอาศัยฮาร์ดแวร์ (Hardware Core) ที่มีความแม่นยำสูง เชื่อมต่อผ่านระบบเซ็นเซอร์และการประมวลผลของไมโครคอนโทรลเลอร์ โดยตัวบอร์ดคอนโทรลเลอร์จะรองรับการรันเฟิร์มแวร์ระบบชาร์จควบคุม MPPT ทั้งแบบวิธีรบกวนและสังเกต (Perturb and Observe - <code>PnOmppt.ino</code>) และวิธีกรรมวิธีทางพันธุกรรม (Genetic Algorithm - <code>Gamppt.ino</code>) ตามขอบเขตการทดสอบ โดยมีรายละเอียดโครงสร้างอุปกรณ์ดังนี้:</p>
         
         <table>
             <thead>
@@ -395,7 +413,7 @@
                 <tr>
                     <td><strong>ไมโครคอนโทรลเลอร์ (MCU)</strong></td>
                     <td>ESP32 DevKit V1 (Tensilica 32-bit LX6, 240 MHz, SRAM 520 KB, Flash 4 MB, Wi-Fi 2.4 GHz)</td>
-                    <td>เป็นสมองกลควบคุมหลัก ทำการประมวลผลข้อมูลจากเซ็นเซอร์ ดึงข้อมูลเวลาสากลจาก NTP Server และส่งข้อมูลขึ้นคลาวด์ Firebase แบบเรียลไทม์</td>
+                    <td>เป็นสมองกลควบคุมหลัก ทำการประมวลผลข้อมูลจากเซ็นเซอร์ ดึงข้อมูลเวลาสากลจาก NTP Server รันอัลกอริทึมการชาร์จควบคุมกระแสและแรงดัน (MPPT) และส่งพารามิเตอร์พลังงานขึ้น Firebase ผ่าน Wi-Fi</td>
                 </tr>
                 <tr>
                     <td><strong>โมดูลตรวจวัดค่าไฟฟ้า (AC Power Meter)</strong></td>
@@ -405,7 +423,7 @@
                 <tr>
                     <td><strong>เซ็นเซอร์กระแสไฟ (ทางเลือก)</strong></td>
                     <td>ACS712 (Hall-Effect Direct) หรือ SCT-013-000 (Non-invasive Current Transformer 100A)</td>
-                    <td>ใช้ตรวจวัดกระแสไฟฟ้าไหลผ่านในกรณีไม่ใช้โมดูล PZEM-004T โดยส่งเอาต์พุตออกมาเป็นสัญญาณไฟฟ้าอะนาล็อก (Analog Signal)</td>
+                    <td>ใช้ตรวจวัดกระแสไฟฟ้าไหลผ่านในกรณีฝั่งวงจรควบคุมดีซี (DC Charge Controller) โดยส่งเอาต์พุตออกมาเป็นสัญญาณไฟฟ้าอะนาล็อก (Analog Signal) หรือแปลงผ่านสเกลแรงดันเพื่อคำนวณกำลังวัตต์</td>
                 </tr>
                 <tr>
                     <td><strong>โมดูลแปลงไฟเลี้ยง (Power Supply)</strong></td>
@@ -418,62 +436,68 @@
         <hr>
 
         <h3>3.2 ขั้นตอนการรับส่งข้อมูลทางกายภาพและระบบคลาวด์ (Data Transmission Flow)</h3>
-        <p>การจัดส่งข้อมูลแบ่งออกเป็นขั้นตอนดังภาพไดอะแกรมด้านล่าง:</p>
+        <p>การรับส่งข้อมูลพารามิเตอร์ของระบบวัดค่าพลังงานแบ่งออกเป็น 2 ช่องทางหลัก (Dual-Channel Telemetry):</p>
+        <ol>
+            <li><strong>ช่องข้อมูลสดเรียลไทม์ (Real-time Streaming Channel)</strong>: ข้อมูลค่าแรงดันไฟฟ้า กระแสไฟฟ้า และกำลังวัตต์ทันที ณ วินาทีปัจจุบัน ทั้งฝั่งขาเข้าจากแผงโซลาร์เซลล์ (Solar Input: Vin, Iin, Pin) และฝั่งขาออกที่ชาร์จประจุเข้าสู่แบตเตอรี่ (Battery Output: Vout, Iout, Pout) จะถูกอัปเดตอย่างต่อเนื่องเพื่อสะท้อนสถานะการทำงานปัจจุบัน</li>
+            <li><strong>ช่องข้อมูลเฉลี่ยสะสมรายชั่วโมง (1-Hour Running Average Channel)</strong>: เพื่อป้องกันการจัดเก็บข้อมูลที่หนาแน่นและมีความผันผวนสูง เฟิร์มแวร์บนชิป ESP32 ได้ติดตั้ง **อัลกอริทึมเฉลี่ยสะสมรายชั่วโมง (1-Hour Running Average Algorithm)** โดยบอร์ดจะทำการอ่านค่าพลังงานทุก ๆ 15 วินาที แล้วทำการรวมสะสมค่ากำลังวัตต์และกระแสไฟฟ้าไว้ในหน่วยความจำชั่วคราว จากนั้นทำการหารเฉลี่ยสะสมปัจจุบันยิงอัปโหลดข้อมูลทดแทนที่โหนดของชั่วโมงนั้น ๆ ผ่านเมธอด <code>HTTP PATCH</code> และทำการรีเซ็ตตัวแปรเริ่มต้นรอบใหม่เมื่อนาฬิกาของระบบเปลี่ยนผ่านเป็นชั่วโมงถัดไป</li>
+        </ol>
 
         <!-- Architecture Diagram -->
         <div class="arch-container">
-            <div class="arch-block hw">เครื่องใช้ไฟฟ้า</div>
+            <div class="arch-block hw">เครื่องใช้ไฟฟ้า / โซลาร์</div>
             <div class="arch-arrow">→</div>
-            <div class="arch-block hw">เซ็นเซอร์ PZEM-004T / ACS712</div>
+            <div class="arch-block hw">เซ็นเซอร์ตรวจวัดไฟฟ้า</div>
             <div class="arch-arrow">→</div>
-            <div class="arch-block hw">บอร์ด ESP32 + เวลาจาก NTP</div>
+            <div class="arch-block hw">ESP32 (คำนวณเฉลี่ยราย ชม. / ซิงค์ NTP)</div>
             <div class="arch-arrow">→</div>
-            <div class="arch-block db">Firebase Realtime DB</div>
+            <div class="arch-block db">Firebase Cloud (realtime / history)</div>
             <div class="arch-arrow">→</div>
-            <div class="arch-block app">แอปพลิเคชัน Flutter (UI)</div>
+            <div class="arch-block app">Flutter App UI (3-Tab Monitor)</div>
         </div>
-
-        <p>โดยมีขั้นตอนการทำงานคือ:</p>
-        <ol>
-            <li><strong>ตรวจวัด (Sensor Measurement)</strong>: เซ็นเซอร์วัดพารามิเตอร์พลังงานไฟฟ้าตามปริมาณการใช้งานจริง</li>
-            <li><strong>ดึงข้อมูลเวลาสากล (NTP Sync)</strong>: ESP32 เชื่อมต่อ Wi-Fi และดึงเวลาปัจจุบันทางอินเทอร์เน็ตเพื่อแปลงหา วันที่ (YYYY-MM-DD) และ ชั่วโมง (HH)</li>
-            <li><strong>ห่อหุ้มข้อมูลและส่งออก (Packaging & Upload)</strong>: แปลงค่าเป็นสตริงรูปแบบ JSON <code>{"watt": 120.5, "amp": 1.25}</code> แล้วจัดอัปโหลดขึ้น Firebase ไปยังพิกัด <code>history/YYYY-MM-DD/HH</code> แบบเรียลไทม์</li>
-        </ol>
 
         <hr>
 
         <h3>3.3 โครงสร้างข้อมูลบนคลาวด์ (Firebase Realtime Database Schema)</h3>
-        <p>การจัดเก็บข้อมูลบนฐานข้อมูลระบบคลาวด์ของ Firebase ออกแบบโครงสร้างในลักษณะลำดับชั้น <strong>JSON Tree</strong> ภายใต้ URL หลักของโครงการ <code>https://projectga-d3f20-default-rtdb.asia-southeast1.firebasedatabase.app/</code> เพื่อรองรับการสืบค้นข้อมูลตามวันเวลาและรองรับการดึงข้อมูลแบบสตรีมมิ่ง โดยมีรายละเอียดโครงสร้างข้อมูลดังนี้:</p>
+        <p>ฐานข้อมูลคลาวด์ของ Firebase ออกแบบโครงสร้างข้อมูลเป็นลักษณะ JSON Tree ภายใต้พิกัดโครงการ <code>https://projectga-d3f20-default-rtdb.asia-southeast1.firebasedatabase.app/</code> ซึ่งแบ่งโครงสร้างออกเป็น 2 โหนดหลักดังนี้:</p>
         
         <ul>
-            <li><strong>โหนดหลัก (Root Node)</strong>: <code>history</code> - สารบัญหลักที่ใช้เก็บบันทึกประวัติพลังงานทั้งหมดของระบบ</li>
-            <li><strong>โหนดวันที่ (Date Key)</strong>: <code>YYYY-MM-DD</code> (เช่น <code>2026-05-30</code>, <code>2026-06-01</code>) - โหนดระดับที่สองใช้รูปแบบ วันที่ปัจจุบัน คั่นด้วยเครื่องหมายลบ เพื่อแยกแยะประวัติการใช้ไฟฟ้าในแต่ละวัน ทำหน้าที่เป็นดัชนี (Index) สำหรับคัดกรองวันที่ต้องการสืบค้นย้อนหลัง</li>
-            <li><strong>โหนดชั่วโมง (Hour Key)</strong>: <code>HH</code> (ช่วงค่าตัวเลขระหว่าง <code>0</code> ถึง <code>23</code> เช่น <code>8</code>, <code>10</code>) - โหนดระดับที่สามแยกแยะเวลาเป็นรายชั่วโมง โดยตัดเลข 0 ที่อยู่ข้างหน้าออกเพื่อความกระชับของชื่อคีย์และง่ายต่อการคิวรีประมวลผล</li>
-            <li><strong>ฟิลด์ข้อมูลพารามิเตอร์พลังงานไฟฟ้า (Data Fields)</strong>:
+            <li><strong>โหนดค่าสดปัจจุบัน (<code>realtime</code> Node)</strong>: จัดเก็บพารามิเตอร์พลังงานชั่วขณะสำหรับแสดงทิศทางการไหลและการวิเคราะห์ประสิทธิภาพชาร์จ ประกอบด้วย:
                 <ul>
-                    <li><code>amp</code>: ค่ากระแสไฟฟ้าเฉลี่ยในชั่วโมงนั้น (ชนิดข้อมูล: ทศนิยม Double, หน่วย: Ampere: A)</li>
-                    <li><code>watt</code>: ค่ากำลังไฟฟ้าจริงที่ใช้งานในชั่วโมงนั้น (ชนิดข้อมูล: จำนวนเต็ม/ทศนิยม, หน่วย: Watt: W)</li>
+                    <li><code>vin</code>: แรงดันไฟฟ้าขาเข้าจากแผงโซลาร์เซลล์ (หน่วย: V)</li>
+                    <li><code>iin</code>: กระแสไฟฟ้าขาเข้าจากแผงโซลาร์เซลล์ (หน่วย: A)</li>
+                    <li><code>pin</code>: กำลังไฟฟ้าขาเข้าจากแผงโซลาร์เซลล์ (หน่วย: W)</li>
+                    <li><code>vout</code>: แรงดันไฟฟ้าฝั่งจ่ายชาร์จแบตเตอรี่ (หน่วย: V)</li>
+                    <li><code>iout</code>: กระแสไฟฟ้าฝั่งจ่ายชาร์จแบตเตอรี่ (หน่วย: A)</li>
+                    <li><code>pout</code>: กำลังไฟฟ้าฝั่งจ่ายชาร์จแบตเตอรี่ (หน่วย: W)</li>
+                </ul>
+            </li>
+            <li><strong>โหนดประวัติย้อนหลัง (<code>history</code> Node)</strong>: โหนดบันทึกประวัติการใช้กำลังไฟฟ้าเฉลี่ยรายชั่วโมงแยกตามวันเวลา โดยมีโครงสร้างย่อยคือ <code>history/YYYY-MM-DD/HH</code>:
+                <ul>
+                    <li><code>amp</code>: ค่ากระแสไฟฟ้าเฉลี่ยในชั่วโมงนั้น (หน่วย: A)</li>
+                    <li><code>watt</code>: ค่ากำลังไฟฟ้าเฉลี่ยจริงในชั่วโมงนั้น (หน่วย: W)</li>
                 </ul>
             </li>
         </ul>
 
         <h4>ตัวอย่างโครงสร้างข้อมูล JSON ที่จัดเก็บจริงใน Firebase Realtime Database:</h4>
         <pre><code>{
+  "realtime": {
+    "vin": 18.45,
+    "iin": 1.22,
+    "pin": 22.50,
+    "vout": 12.60,
+    "iout": 1.60,
+    "pout": 20.16
+  },
   "history": {
-    "2026-05-30": {
+    "2026-06-15": {
       "8": {
-        "amp": 5.5,
-        "watt": 150
+        "amp": 1.05,
+        "watt": 12.50
       },
-      "10": {
-        "amp": 4.8,
-        "watt": 120
-      }
-    },
-    "2026-06-01": {
       "9": {
-        "amp": 6.2,
-        "watt": 180
+        "amp": 1.55,
+        "watt": 19.30
       }
     }
   }
@@ -482,10 +506,7 @@
         <hr>
 
         <h3>3.4 แผนผังการใช้งานระบบ (Use Case Diagram)</h3>
-        <p>แผนผัง Use Case แสดงบทบาทผู้ใช้งาน (Actors) และส่วนประกอบภายในกรอบขอบข่ายการทำงานของระบบ (System Boundary) ในระดับการนำเสนอและจัดหาข้อมูล:</p>
-
-        <!-- Image embed -->
-        <img class="diagram-img" src="use_case_diagram.png" alt="Use Case Diagram รูปภาพแผนภาพ Use Case">
+        <p>แผนผัง Use Case แสดงขอบเขตการทำงานของระบบในการมอนิเตอร์วิเคราะห์ประสิทธิภาพ และการจัดการข้อมูลประวัติย้อนหลัง:</p>
 
         <!-- Use Case visual diagram -->
         <div class="usecase-container">
@@ -496,12 +517,14 @@
             
             <div class="usecase-system">
                 <div class="system-title">ระบบติดตามพลังงานไฟฟ้า (Energy Monitor System)</div>
-                <div class="usecase-pill">ดูสถานะกำลังไฟและกระแสไฟเรียลไทม์</div>
-                <div class="usecase-pill">สลับมุมมองแนวโน้มรายวัน/รายสัปดาห์</div>
-                <div class="usecase-pill">ดูและค้นหาประวัติย้อนหลังตามวันที่</div>
-                <div class="usecase-pill">สลับโหมดสีหน้าจอแสดงผล (Theme)</div>
-                <div class="usecase-pill hw-use">วัดกระแสไฟและกำลังไฟฟ้าของโหลด</div>
-                <div class="usecase-pill hw-use">อัปโหลดข้อมูลประวัติขึ้นระบบคลาวด์แบบเรียลไทม์</div>
+                <div class="usecase-pill">ดูสถานะกำลังวัตต์และแผงไหลเวียนพลังงานเรียลไทม์ (Power Flow)</div>
+                <div class="usecase-pill">วิเคราะห์ประสิทธิภาพการชาร์จ (Efficiency) & กำลังสูญเสีย (Loss)</div>
+                <div class="usecase-pill">ตรวจสอบโหมดการชาร์จแบตเตอรี่แบบอัตโนมัติ (Bulk/Absorption/Float)</div>
+                <div class="usecase-pill">สลับแกนพล็อตกราฟแนวโน้ม 3 รูปแบบ (Realtime/Day/Week)</div>
+                <div class="usecase-pill">ค้นหาและสืบค้นบันทึกประวัติไฟฟ้าตามวันที่</div>
+                <div class="usecase-pill">สลับโทนสีหน้าต่างแสดงผลกลางคืน (Dark Mode Toggle)</div>
+                <div class="usecase-pill hw-use">วัดประสิทธิภาพพลังงาน & หาจุดทำงานสูงสุด (MPPT Control)</div>
+                <div class="usecase-pill hw-use">อัปโหลดพารามิเตอร์กระแสและวัตต์แบบเฉลี่ยสะสมรายชั่วโมง</div>
             </div>
             
             <div class="usecase-actor hw">
@@ -513,94 +536,62 @@
         <hr>
 
         <h3>3.5 แผนผังแสดงขั้นตอนการทำงานของระบบ (Application Working Flowchart)</h3>
-        <p>แผนผังขั้นตอนการทำงาน (Flowchart) ต่อไปนี้แสดงขั้นตอนการทำงานทั้งหมดของระบบ ตั้งแต่จุดเริ่มต้นฝั่งฮาร์ดแวร์ การส่งข้อมูล ตลอดจนระบบแสดงผลและการโต้ตอบในตัวแอปพลิเคชัน:</p>
-
-        <!-- Image embed -->
-        <img class="diagram-img" src="system_flowchart.png" alt="System Flowchart รูปภาพแผนภาพขั้นตอนการทำงาน">
+        <p>แผนผังแสดงลอจิกการทำงานและทิศทางการประมวลผลข้อมูลในแอพพลิเคชัน Flutter ซึ่งรวมถึงระบบวิเคราะห์ประสิทธิภาพการไหลของพลังงานและการสลับสลับหน้าตามการนำทางของผู้ใช้งาน:</p>
 
         <!-- Visual Flowchart HTML -->
         <div class="flowchart-container">
             <div class="flow-node start">เริ่มต้นฝั่งอุปกรณ์ฮาร์ดแวร์ (Hardware Start)</div>
             <div class="flow-arrow">↓</div>
-            <div class="flow-node hardware">เซ็นเซอร์ตรวจวัดค่า Watt และ Amp ของเครื่องใช้ไฟฟ้า</div>
+            <div class="flow-node hardware">เซ็นเซอร์ PZEM-004T / CT วัดพารามิเตอร์แรงดันไฟฟ้าและกระแสไฟ</div>
             <div class="flow-arrow">↓</div>
-            <div class="flow-node hardware">ESP32 ซิงโครไนซ์เวลาปัจจุบันผ่าน NTP Server</div>
+            <div class="flow-node hardware">ESP32 รันระบบควบคุมกำลัง (GA / P&O) และคำนวณเฉลี่ยรายชั่วโมง</div>
             <div class="flow-arrow">↓</div>
-            <div class="flow-node hardware">จัดรูปแบบข้อมูล JSON และอัปโหลดผ่าน Wi-Fi</div>
-            <div class="flow-arrow">↓</div>
-            <div class="flow-node database">ฐานข้อมูล Firebase Realtime Database (รับ/บันทึกข้อมูล)</div>
+            <div class="flow-node database">อัปเดตข้อมูลขึ้น Firebase ที่คีย์ realtime และ history/YYYY-MM-DD/HH</div>
             <div class="flow-arrow">↓</div>
             <div class="flow-node start" style="background-color: #6366f1;">เริ่มต้นฝั่งโมบายแอพพลิเคชัน (App Start)</div>
             <div class="flow-arrow">↓</div>
-            <div class="flow-node">เริ่มต้นระบบและเชื่อมต่อ Firebase Core</div>
+            <div class="flow-node">เรียกใช้งาน Firebase Core & เชื่อมต่อฐานข้อมูล</div>
             <div class="flow-arrow">↓</div>
-            <div class="flow-node">รับข้อมูลเรียลไทม์ผ่าน StreamBuilder (_historyRef.onValue)</div>
+            <div class="flow-node">เริ่มระบบจำลองข้อมูลเรียลไทม์ (Simulation Engine Fallback ในตัวแอป)</div>
             <div class="flow-arrow">↓</div>
-            <div class="flow-node decision">มีข้อมูลกลับมาจาก Firebase หรือไม่?</div>
+            <div class="flow-node">สมัครรับข้อมูล StreamBuilder ดึงโครงสร้างประวัติทั้งหมดย้อนหลัง</div>
+            <div class="flow-arrow">↓</div>
+            <div class="flow-node decision">ผู้ใช้งานสลับเลือกหน้าด้วย Bottom Navigation Bar?</div>
             
             <div class="flow-row">
                 <div class="flow-col">
-                    <span class="branch-label">ไม่ใช่/ว่าง</span>
-                    <div class="flow-node" style="border-color: #ef4444; background: #fef2f2;">แสดงข้อความ "Waiting for data..."</div>
+                    <span class="branch-label">ดัชนี 0: หน้าหลัก</span>
+                    <div class="flow-node action-green">แสดงผล PowerCard สรุปค่าไฟฟ้าวันนี้, แสดง InOutCard เปรียบเทียบกำลังวัตต์เข้า-ออก, แสดง TrendChart สลับได้ 3 โหมด และสรุปล็อกประวัติกิจกรรม</div>
                 </div>
                 <div class="flow-col">
-                    <span class="branch-label">ใช่</span>
-                    <div class="flow-node">ดึงรายการข้อมูลวันที่ทั้งหมด & เรียงลำดับจากใหม่สุด</div>
-                </div>
-            </div>
-
-            <div class="flow-arrow" style="margin-left: 290px;">↓</div>
-            <div class="flow-node" style="margin-left: 290px;">ระบุวันที่สำหรับแสดงผล (displayDate)</div>
-            <div class="flow-arrow" style="margin-left: 290px;">↓</div>
-            <div class="flow-node decision" style="margin-left: 290px;">ผู้ใช้เลือกมุมมองแบบใด?</div>
-
-            <div class="flow-row">
-                <div class="flow-col">
-                    <span class="branch-label">รายชั่วโมง (Day View)</span>
-                    <div class="flow-node action-green">ดึงประวัติรายชั่วโมงของวันที่เลือก<br>เตรียมส่งข้อมูลเป็นกราฟและตารางรายการ</div>
+                    <span class="branch-label">ดัชนี 1: ประวัติ</span>
+                    <div class="flow-node action-green">แสดงรายการประวัติวันที่ทั้งหมด หากกดเลือกวันที่จะอัปเดตตัวแปรแสดงผลย้อนหลังและดึงหน้าผู้ใช้กลับไปยังหน้าแดชบอร์ดหลัก</div>
                 </div>
                 <div class="flow-col">
-                    <span class="branch-label">รายสัปดาห์ (Week View)</span>
-                    <div class="flow-node action-green">ดึงประวัติสูงสุดรายวันย้อนหลัง 7 วัน<br>คำนวณและเตรียมข้อความแสดงผลแบบสัปดาห์</div>
+                    <span class="branch-label">ดัชนี 2: ขาเข้า/ขาออก</span>
+                    <div class="flow-node action-green">คำนวณประสิทธิภาพชาร์จ ((pout/pin)*100) และพลังงานสูญเสีย (pin-pout) พร้อมวิเคราะห์โหมดชาร์จปัจจุบัน แสดงผ่านหน้าปัดเกจและตารางย่อย</div>
                 </div>
             </div>
 
             <div class="flow-arrow">↓</div>
-            <div class="flow-node">เรนเดอร์โครงสร้างหน้าแดชบอร์ดหลัก (Dashboard Screen)</div>
-            <div class="flow-arrow">↓</div>
-            <div class="flow-node" style="background: #faf5ff; border-color: #a855f7;">แสดงวิดเจ็ตย่อย: TopBar, PowerCard, TrendChart, ActivityLogs</div>
-            <div class="flow-arrow">↓</div>
-            <div class="flow-node decision">ผู้ใช้งานทำรายการโต้ตอบผ่านหน้าจอหลัก</div>
-
-            <div class="flow-row">
-                <div class="flow-col">
-                    <span class="branch-label">กดปุ่มสลับธีม</span>
-                    <div class="flow-node" style="font-size: 0.85rem;">สลับสีธีมผ่าน AppColors.isDark และแสดงผลใหม่ทันที</div>
-                </div>
-                <div class="flow-col">
-                    <span class="branch-label">กดเลือกเมนู "ประวัติ"</span>
-                    <div class="flow-node" style="font-size: 0.85rem;">แสดง HistoryList ที่แปลงฟอร์แทต D/M/Y แล้ว เมื่อเลือกวันจะรีเซตหน้าหลักไปยังวันดังกล่าว</div>
-                </div>
-                <div class="flow-col">
-                    <span class="branch-label">มีข้อมูลอัปเดตเรียลไทม์</span>
-                    <div class="flow-node" style="font-size: 0.85rem;">StreamBuilder อัปเดตข้อมูลและลากเส้นแสดงผลกราฟทันที</div>
-                </div>
-            </div>
+            <div class="flow-node">อัปเดตส่วนอินเตอร์เฟซและสีธีมตามสถานะการตั้งค่าของผู้ใช้ (Dark Mode Toggle)</div>
         </div>
 
         <hr>
 
         <h3>3.6 โครงสร้างและการจัดวางหน้าจอหลัก (Main Screen Architecture)</h3>
-        <p>โครงสร้างหน้าจอถูกควบคุมโดยคลาส <code>WattDashboardPage</code> (ในไฟล์ <code>graph_page.dart</code>) ซึ่งเป็น <code>StatefulWidget</code> ทำหน้าที่เป็นผู้ประสานงานหลักในการจัดโครงสร้างหน้าและการสลับมุมมองระหว่าง <strong>หน้าหลัก (Dashboard)</strong> และ <strong>หน้าประวัติ (History List)</strong> โดยใช้โครงร่างโครงสร้างแบบชั้น (Layered Layout) ร่วมกับ <code>Scaffold</code> ดังนี้:</p>
+        <p>หน้าหลักของแอพพลิเคชันถูกจัดแบ่งโครงสร้างการนำเสนอข้อมูลและอินเตอร์เฟซออกเป็น 3 หน้าต่างย่อย (Tab-based View) โดยใช้ตัวสลับดัชนีและคีย์ควบคุมแถบด้านล่าง (Bottom Navigation Bar) เชื่อมต่อคลาส <code>WattDashboardPage</code>:</p>
         <ul>
-            <li><strong>ส่วนบน (TopBar)</strong>: แสดงโลโก้ ชื่อแอพพลิเคชัน (Energy Monitor) และปุ่มเปลี่ยนโหมดกลางคืน (Dark Mode Toggle)</li>
-            <li><strong>ส่วนกลาง (Body)</strong>: เปลี่ยนมุมมองตามแท็บนำทางที่เลือก (Navigation Index):
+            <li><strong>หน้าหลัก (Dashboard Screen - Index 0)</strong>: แสดงพารามิเตอร์พลังงานประจำวันและการวิเคราะห์แนวโน้ม ประกอบด้วย:
                 <ul>
-                    <li><strong>Dashboard View</strong>: แสดงแผงควบคุมหลัก ได้แก่ การ์ดกำลังไฟฟ้าแบบเรียลไทม์ กราฟเส้นแนวโน้มการใช้ไฟ และตารางประวัติกิจกรรมชั่วโมงต่อชั่วโมง</li>
-                    <li><strong>History View</strong>: แสดงรายการประวัติวันที่สามารถเลือกดูย้อนหลังได้ โดยดึงข้อมูลจาก Firebase Realtime Database</li>
+                    <li><code>PowerCard</code>: การ์ดแสดงผลค่ากำลังวัตต์ กระแส และวันที่ปัจจุบัน แปลงรูปแบบเป็นสากล</li>
+                    <li><code>InOutCard</code>: แผงแสดงอัตราการไหลของพลังงานชั่วขณะเปรียบเทียบ Solar Input และ Battery Output แบบเคียงข้างกัน</li>
+                    <li><code>TrendChart</code>: กราฟวิเคราะห์ประสิทธิภาพที่สามารถปรับเปลี่ยนได้ 3 โหมด คือ กราฟขยับตามเวลาจริง (Realtime Line Chart), กราฟพล็อตแนวโน้มรายชั่วโมงของวันที่เลือก (Daily View) และกราฟค่าสูงสุดย้อนหลัง 7 วัน (Weekly View)</li>
+                    <li><code>ActivityLogs</code>: ตารางบันทึกกิจกรรมพลังงานประจักษ์ในแต่ละช่วงข้อมูลย่อย</li>
                 </ul>
             </li>
-            <li><strong>ส่วนล่าง (BottomNav)</strong>: แถบนำทางด้านล่างสำหรับการสลับมุมมองระหว่าง หน้าหลัก (หน้าแรก) และ ประวัติ</li>
+            <li><strong>หน้าประวัติย้อนหลัง (History Picker Screen - Index 1)</strong>: รายการวันที่ทั้งหมดที่ค้นพบในระบบ Firebase แสดงผลในรูปแบบตารางปุ่มกด เมื่อแตะรายการใด คิวรีจะอัปโหลดประวัติและพาผู้ใช้งานย้อนกลับไปยังหน้าหลักเพื่อพล็อตกราฟของวันดังกล่าวโดยอัตโนมัติ</li>
+            <li><strong>หน้าวิเคราะห์พลังงานละเอียด (In/Out Analysis - Index 2)</strong>: เป็นส่วนคำนวณหาประสิทธิภาพเชิงตัวเลขของระบบชาร์จควบคุมพลังงาน แสดงผลเปอร์เซ็นต์ประสิทธิภาพการแปลงด้วย Circular Gauge พร้อมระบุปริมาณความร้อนหรือค่าพลังงานที่สูญเสียในสายและตัวควบคุม (Power Loss) รวมถึงการระบุโหมดขั้นตอนประจุไฟในปัจจุบัน</li>
         </ul>
 
         <hr>
@@ -608,10 +599,9 @@
         <h3>3.7 รายละเอียดการทำงานและการเชื่อมต่อส่วนเก็บข้อมูลหลัก (Core Integration)</h3>
         
         <h4>3.7.1 การเริ่มต้นระบบและการเชื่อมต่อ Firebase (Firebase Initialization)</h4>
-        <p>แอพพลิเคชันจะเริ่มต้นสถาปัตยกรรมผ่านฟังก์ชันหลัก <code>main()</code> ในไฟล์ <code>main.dart</code> โดยทำการเริ่มต้นการเชื่อมต่อแบบอะซิงโครนัส (Asynchronous) เข้ากับ Firebase เพื่อเตรียมความพร้อมสำหรับการทำ Data Streaming:</p>
+        <p>เฟรมเวิร์ก Flutter จะเริ่มเรียกทำงานผ่านฟังก์ชัน <code>main()</code> เพื่อเตรียมเฟรมและสร้างสตรีมการรับส่งข้อมูลของ Firebase โดยระบุพารามิเตอร์ตามไฟล์คอนฟิกูเรชัน:</p>
         
-        <pre><code>// โค้ดส่วนการเริ่มต้นระบบและการเชื่อมต่อกับ Firebase (main.dart)
-void main() async {
+        <pre><code>void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
@@ -619,38 +609,39 @@ void main() async {
   runApp(const MyApp());
 }</code></pre>
 
-        <h4>3.7.2 การดึงข้อมูลและเชื่อมโยงข้อมูลแบบเรียลไทม์ (Firebase Realtime Stream Integration)</h4>
-        <p>ระบบใช้โครงสร้าง <code>StreamBuilder</code> ในคลาส <code>_WattDashboardPageState</code> (ในไฟล์ <code>graph_page.dart</code>) เพื่อสมัครรับข้อมูล (Subscribe) จากตำแหน่ง <code>history</code> บน Firebase Realtime Database ทำให้หน้าจอแอพพลิเคชันสามารถรีเรนเดอร์ตัวเองใหม่โดยอัตโนมัติทันทีที่มีการเปลี่ยนแปลงข้อมูลจากฝั่งฮาร์ดแวร์:</p>
+        <h4>3.7.2 ระบบจำลองข้อมูลแบบเรียลไทม์ (Simulation Engine Fallback & Telemetry Integration)</h4>
+        <p>ภายในหน้าจอหลักมีการติดตั้งกลไกอ้างอิงข้อมูลของ Firebase สลับกับการประยุกต์ใช้ **Simulation Engine** ผ่านตัวจับเวลา <code>Timer.periodic</code> ทุกๆ 2 วินาที เพื่อสร้างจุดข้อมูลและจำลองพารามิเตอร์อินพุตแผงและเอาต์พุตแบตเตอรี่ในระดับทศนิยมที่สมจริง ป้องกันข้อผิดพลาดของกราฟหรือค่าคงที่ในกรณีที่อุปกรณ์ฮาร์ดแวร์หยุดการติดต่อทางอินเทอร์เน็ตชั่วคราว:</p>
 
-        <pre><code>// โค้ดส่วนดึงข้อมูลประวัติและค่าเรียลไทม์จาก Firebase Realtime Database (graph_page.dart)
-class _WattDashboardPageState extends State&lt;WattDashboardPage&gt; {
-  // การกำหนดตำแหน่งอ้างอิงของโฟลเดอร์ใน Database
-  final DatabaseReference _historyRef = FirebaseDatabase.instance.ref('history');
+        <pre><code>// โค้ดส่วนระบบจำลองและควบคุมตัวแปรทางฟิสิกส์ (graph_page.dart)
+void _setupRealtimeData() {
+  _simulationTimer = Timer.periodic(const Duration(seconds: 2), (timer) {
+    setState(() {
+      // ดึงค่ากำลังวัตต์ล่าสุดจากประวัติระบบเพื่อเป็นฐานคำนวณ
+      double basePout = _latestHistoryWatt ?? 8.5;
+      if (basePout <= 0.1) basePout = 8.5;
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.bg,
-      body: SafeArea(
-        child: StreamBuilder(
-          stream: _historyRef.onValue, // เชื่อมโยง Stream จาก Firebase
-          builder: (context, snapshot) {
-            // เมื่อได้รับข้อมูลจาก Firebase สำเร็จ
-            if (snapshot.hasData &amp;&amp; snapshot.data!.snapshot.value != null) {
-              final raw = snapshot.data!.snapshot.value as Map;
-              
-              // ดึงคีย์ข้อมูลวันที่ทั้งหมดเพื่อแสดงผลในรายการประวัติ
-              availableDates = raw.keys.map((e) =&gt; e.toString()).toList();
-              availableDates.sort((a, b) =&gt; b.compareTo(a)); // เรียงลำดับวันล่าสุดขึ้นก่อน
-              
-              // ... ขั้นตอนการคำนวณและแปลงค่ากำลังไฟฟ้าเพื่อส่งต่อไปยัง Widget อื่น ๆ ...
-            }
-            // ...
-          },
-        ),
-      ),
-    );
-  }
+      final double randomSec = DateTime.now().second.toDouble();
+      final double wave = 0.5 * (1 + (randomSec / 60.0)); // รูปแบบคลื่นสัญญาณจำลอง
+
+      final double randV = (DateTime.now().millisecond % 80 - 40) / 100.0; // ค่าแกว่งแรงดัน +/- 0.4V
+      final double randI = (DateTime.now().millisecond % 60 - 30) / 1000.0; // ค่าแกว่งกระแส +/- 0.03A
+
+      // คำนวณพารามิเตอร์ชาร์จขาออกแบตเตอรี่ (Battery Output)
+      vout = 12.4 + randV;
+      iout = (basePout / vout) * wave + randI;
+      if (iout < 0) iout = 0;
+      pout = vout * iout;
+
+      // คำนวณพารามิเตอร์แผงขาเข้า (Solar Input) โดยอิงตามสัมประสิทธิ์ประสิทธิภาพชาร์จประมาณ 88%-92%
+      vin = 18.2 + randV * 1.5;
+      double efficiency = 0.88 + (DateTime.now().millisecond % 5) / 100.0;
+      pin = pout / efficiency;
+      iin = pin / vin;
+
+      // พล็อตจุดจุดข้อมูลเรียลไทม์ไปยังหน่วยความจำแสดงกราฟเส้น
+      _addRealtimePoint(pout);
+    });
+  });
 }</code></pre>
 
         <hr>
@@ -658,95 +649,127 @@ class _WattDashboardPageState extends State&lt;WattDashboardPage&gt; {
         <h3>3.8 รายละเอียดการออกแบบและโครงสร้างโค้ดของวิดเจ็ตย่อย (UI Component Breakdown)</h3>
 
         <h4>3.8.1 TopBar (แถบเมนูด้านบน)</h4>
-        <p>ทำหน้าที่แสดงชื่อระบบและสลับสถานะสีธีมผ่านตัวแปร <code>onToggleTheme</code> ที่เชื่อมกับสถานะหน้าจอหลัก</p>
+        <p>ทำหน้าที่แสดงโลโก้ ชื่อระบบ และตรวจจับเหตุการณ์การคลิกเพื่อสลับโทนสว่างหรือโทนมืด (Dark Theme Toggle) โดยจัดพิกัดส่งค่าแบบ Callbacks</p>
 
         <h4>3.8.2 PowerCard (การ์ดแสดงผลค่ากำลังไฟฟ้าหลัก)</h4>
-        <p>แสดงค่ากำลังไฟฟ้าหลัก (วัตต์ และ แอมป์) พร้อมระบบแปลงรูปแบบการแสดงผลวันที่ที่กำลังถูกดึงข้อมูลจากค่าเริ่มต้นของเซสชันหรือค่าที่ดึงมาจากฐานข้อมูล:</p>
+        <p>แสดงค่ากำลังไฟฟ้าหลัก (วัตต์ และ แอมป์) ของวันที่หรือช่วงเวลาที่สืบค้น โดยมีอัลกอริทึมในการแยกสตริงวันที่ <code>YYYY-MM-DD</code> ออกมาจัดรูปแบบใหม่เป็น <code>DD/MM/YYYY</code> เพื่อความคุ้นเคยของผู้ใช้งานทั่วไป</p>
 
-        <pre><code>// โค้ดส่วนการรับข้อมูลและแปลงแสดงผลการ์ดหลัก (power_card.dart)
-class PowerCard extends StatelessWidget {
-  final String watt;
-  final String amp;
-  final String dateStr; // รับค่าวันที่ในรูปแบบ YYYY-MM-DD
-  final bool dayView;
+        <h4>3.8.3 InOutCard (การ์ดเปรียบเทียบการไหลของกำลังไฟ)</h4>
+        <p>แสดงสตรีมปริมาณการไหลแบบสองช่องขนาน (Solar Input vs Battery Output) บนหน้าแดชบอร์ดหลักเพื่อให้ทราบค่าแรงดัน กระแส และวัตต์ ณ ปัจจุบันในหน้าเดียว:</p>
+        <pre><code>// โครงสร้างส่วนเปรียบเทียบข้อมูลเข้าออกเบื้องต้น (in_out_card.dart)
+class InOutCard extends StatelessWidget {
+  final double vin;
+  final double iin;
+  final double pin;
+  final double vout;
+  final double iout;
+  final double pout;
 
-  // ...
+  const InOutCard({
+    Key? key,
+    required this.vin,
+    required this.iin,
+    required this.pin,
+    required this.vout,
+    required this.iout,
+    required this.pout,
+  }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-    // การแปลงรูปแบบวันที่ YYYY-MM-DD ให้เป็นสากล D/M/Y
-    final parts = dateStr.split('-');
-    final formattedDate = parts.length == 3 ? '${parts[2]}/${parts[1]}/${parts[0]}' : dateStr;
-
     return Container(
-      // ... การกำหนดสไตล์โครงสร้างการจัดวาง ...
-      child: Column(
+      // ... กำหนดการตกแต่งขอบและกล่องแสงเงา ...
+      child: Row(
         children: [
-          Text(
-            dayView ? formattedDate : 'Last 7 Days', // แสดงวันที่ในฟอร์แทต D/M/Y ที่แปลงแล้ว
-            style: TextStyle(fontSize: 11, color: AppColors.textMuted),
-          ),
-          // ... แสดงค่ากำลังไฟฟ้าและกระแสไฟฟ้า ...
+          // ฝั่งขาเข้าแผงโซลาร์
+          Expanded(child: _buildColumn('ขาเข้า (Solar Input)', Icons.solar_power_rounded, Colors.amber, vin, iin, pin)),
+          // เส้นแบ่งแนวตั้ง
+          Container(width: 1, height: 90, color: AppColors.divider),
+          // ฝั่งขาออกแบตเตอรี่
+          Expanded(child: _buildColumn('ขาออก (Battery Out)', Icons.battery_charging_full_rounded, Colors.green, vout, iout, pout)),
         ],
       ),
     );
   }
 }</code></pre>
 
-        <h4>3.8.3 TrendChart (กราฟแนวโน้มแสดงผลการใช้พลังงาน)</h4>
-        <p>ใช้โมดูลกราฟของ <code>fl_chart</code> ในการแสดงแนวโน้มแบบเส้นเชื่อมความหนา 3.5 และใช้โครงร่างความโปร่งใสแบบไล่โทนสี (Gradient) แสดงผลข้อมูลได้ทั้งแบบ Day (ข้อมูลชั่วโมงต่อชั่วโมง) และ Week (ข้อมูลแบบ 7 วันล่าสุด)</p>
+        <h4>3.8.4 TrendChart (กราฟแนวโน้มแสดงผลการใช้พลังงาน)</h4>
+        <p>ใช้ตัวสร้างกราฟพล็อตรุ่นอัจฉริยะ <code>fl_chart</code> ในการแปลงโครงสร้างตำแหน่งจุดพิกัด <code>spots</code> แกน Y เป็นค่ากำลังวัตต์ และแกน X เป็นคีย์เวลา/ชั่วโมงย้อนหลัง พร้อมระบบรองรับแกนแบบไดนามิกรุ่นสตรีมมิ่งที่ขยับภาพถอยหลังโดยอัตโนมัติในโหมดเรียลไทม์ (Scrolling Chart Effect)</p>
 
-        <h4>3.8.4 ActivityLogs (ส่วนแสดงประวัติกิจกรรมเชิงลึก)</h4>
-        <p>มีลอจิกแปลงรูปแบบช่วงวันที่ในการแสดงบันทึกแบบแถวรายการย้อนหลังหากมองผ่านมุมมองรายสัปดาห์:</p>
+        <h4>3.8.5 ActivityLogs (ส่วนแสดงประวัติกิจกรรมเชิงลึก)</h4>
+        <p>มีลอจิกคอยตรวจจับและแปลงรูปแบบข้อความตามแกนวันที่แบบสากล โดยหากอยู่ในโหมดรายสัปดาห์ จะถอดรหัสรหัสคีย์วันที่แปลงมาเป็นแบบ <code>วัน/เดือน/ปี</code> ก่อนวาดลงในตารางแถว</p>
 
-        <pre><code>// โค้ดส่วนแยกการจัดแสดงผลวันที่กิจกรรมรายวัน (activity_logs.dart)
-if (dayView) {
-  subStr = '${data.hour.toString().padLeft(2, '0')}:00';
-} else {
-  final idx = data.hour;
-  if (idx &gt;= 0 &amp;&amp; idx &lt; weekLabels.length) {
-    final parts = weekLabels[idx].split('-');
-    // แปลงรูปแบบคีย์ฐานข้อมูล YYYY-MM-DD ในแต่ละจุดแกนข้อมูลให้ออกเป็น D/M/Y
-    subStr = parts.length == 3 ? '${parts[2]}/${parts[1]}/${parts[0]}' : weekLabels[idx];
-  }
-}</code></pre>
+        <h4>3.8.6 HistoryList (ส่วนรายการประวัติการตรวจสอบย้อนหลัง)</h4>
+        <p>ดึงรายการอ้างอิงวันที่จากฐานข้อมูลคลาวด์มาเรนเดอร์เป็นโครงสร้างแบบ ListView เพื่อความสะดวกรวดเร็วในการคลิกย้อนหลัง</p>
 
-        <h4>3.8.5 HistoryList (ส่วนรายการประวัติการตรวจสอบย้อนหลัง)</h4>
-        <p>แสดงรายการคีย์ประวัติวันที่ที่นำมาเรียงเป็นปุ่มกด โดยลอจิกการแปลงรูปแบบจะแปลงก่อนส่งเข้าวาดข้อความเพื่อความสะดวกของมนุษย์ และส่งคีย์ดั้งเดิมกลับไปประมวลผลผ่าน <code>onDateSelected</code>:</p>
+        <h4>3.8.7 InOutPage (ส่วนหน้าจอวิเคราะห์สมดุลประสิทธิภาพพลังงาน)</h4>
+        <p>เป็นหน้าที่เพิ่มเข้ามาในการวิเคราะห์สมรรถนะของวงจรควบคุมประจุ (Charge Controller) โดยใช้สูตรการคำนวณดังนี้:</p>
+        <ul>
+            <li><strong>ประสิทธิภาพการชาร์จ (Charging Efficiency)</strong>:
+                <p style="padding-left: 20px;">$$\eta = \left( \frac{P_{\text{out}}}{P_{\text{in}}} \right) \times 100\%$$</p>
+                <p>ค่าจะถูกป้องกันด้วยฟังก์ชันจำกัดย่าน (Clamp) ให้อยู่ในช่วง 0.0% ถึง 100.0% เพื่อป้องกันความคลาดเคลื่อนจากสัญญาณไฟรบกวน</p>
+            </li>
+            <li><strong>กำลังไฟฟ้าสูญเสียในระบบ (Power Loss)</strong>:
+                <p style="padding-left: 20px;">$$P_{\text{loss}} = P_{\text{in}} - P_{\text{out}}$$</p>
+                <p>คำนวณการสูญเสียพลังงานที่เปลี่ยนเป็นพลังงานความร้อนในอุปกรณ์ควบคุมประจุ</p>
+            </li>
+            <li><strong>การแบ่งจำแนกโหมดการชาร์จแบตเตอรี่แบบอัตโนมัติ (Battery Charge Mode Detection)</strong>:
+                <ul>
+                    <li><code>Bulk Charge</code> (โหมดชาร์จเร็วประสิทธิภาพสูง): ประสิทธิภาพการชาร์จสูงกว่า 90% และมีกำลังวัตต์ขาเข้า ($P_{\text{in}} > 0.5\text{ W}$)</li>
+                    <li><code>Absorption Charge</code> (โหมดชาร์จปกติแรงดันคงที่): ประสิทธิภาพการชาร์จอยู่ระหว่าง 70% ถึง 90%</li>
+                    <li><code>Float Charge</code> (โหมดชาร์จประคองประจุ): ประสิทธิภาพการชาร์จต่ำกว่า 70%</li>
+                </ul>
+            </li>
+        </ul>
 
-        <pre><code>// โค้ดส่วนแสดงผลรายการประวัติย้อนหลัง (history_list.dart)
-class HistoryList extends StatelessWidget {
-  final List<String> dates;
-  final String? selectedDate;
-  final ValueChanged<String> onDateSelected;
+        <pre><code>// ส่วนคำนวณประสิทธิภาพหน้าต่างหลัก (in_out_page.dart)
+class InOutPage extends StatelessWidget {
+  final double vin;
+  final double iin;
+  final double pin;
+  final double vout;
+  final double iout;
+  final double pout;
 
   // ...
 
   @override
   Widget build(BuildContext context) {
-    return ListView.builder(
-      itemCount: dates.length,
-      itemBuilder: (context, i) {
-        final date = dates[i];
-        final isSelected = date == (selectedDate ?? (dates.isNotEmpty ? dates.first : ''));
-        
-        // แยกส่วนคีย์ความปลอดภัย YYYY-MM-DD ออกเป็น D/M/Y
-        final parts = date.split('-');
-        final formattedDate = parts.length == 3 ? '${parts[2]}/${parts[1]}/${parts[0]}' : date;
+    // การคำนวณทางคณิตศาสตร์พลังงาน
+    final double efficiency = pin > 0 ? (pout / pin) * 100 : 0.0;
+    final double loss = pin > pout ? pin - pout : 0.0;
+    final double constrainedEfficiency = efficiency.clamp(0.0, 100.0);
 
-        return GestureDetector(
-          onTap: () =&gt; onDateSelected(date), // ส่งคีย์ดั้งเดิม YYYY-MM-DD กลับไปคิวรี Firebase
-          child: Container(
-            // ...
-            child: Text(
-              formattedDate, // แสดงผลวันที่ในหน้าจอเป็น D/M/Y 
-              style: TextStyle(
-                // ...
-              ),
-            ),
+    // ลอจิกวิเคราะห์สถานะขั้นตอนของระบบควบคุม MPPT
+    String chargingStatus = 'ระบบไม่ทำงาน';
+    Color statusColor = AppColors.textMuted;
+    
+    if (pin > 0.5) {
+      if (efficiency > 90) {
+        chargingStatus = 'กำลังชาร์จประสิทธิภาพสูง (Bulk)';
+        statusColor = Colors.green;
+      } else if (efficiency > 70) {
+        chargingStatus = 'กำลังชาร์จปกติ (Absorption)';
+        statusColor = AppColors.primary;
+      } else {
+        chargingStatus = 'ประคองประจุชาร์จ (Float)';
+        statusColor = Colors.amber;
+      }
+    }
+
+    return SingleChildScrollView(
+      child: Column(
+        children: [
+          // แสดงผล Circular Progress Indicator แทนหน้าปัดเกจประสิทธิภาพ
+          CircularProgressIndicator(
+            value: constrainedEfficiency / 100,
+            strokeWidth: 12,
+            valueColor: AlwaysStoppedAnimation&lt;Color&gt;(statusColor),
           ),
-        );
-      },
+          // แสดงผลค่าตัวเลข และพารามิเตอร์แยกแผงขาเข้ากับแบตเตอรี่ขาออก
+          // ...
+        ],
+      ),
     );
   }
 }</code></pre>
