@@ -39,7 +39,6 @@ class _WattDashboardPageState extends State<WattDashboardPage> {
   final List<String> _realtimeLabels = [];
   final int _maxRealtimePoints = 12;
 
-  double? _latestHistoryWatt;
   ChartMode _chartMode = ChartMode.realtime;
 
   bool _isDark   = false;
@@ -159,7 +158,6 @@ class _WattDashboardPageState extends State<WattDashboardPage> {
                 if (historyList.isNotEmpty) {
                   latestWatt = historyList.last.watt.toStringAsFixed(2);
                   latestAmp  = historyList.last.amp.toStringAsFixed(2);
-                  _latestHistoryWatt = historyList.last.watt;
                   historyList = historyList.reversed.toList();
                 }
               } else {
@@ -178,9 +176,6 @@ class _WattDashboardPageState extends State<WattDashboardPage> {
                       double? parsedVal = double.tryParse(v.toString());
                       if (parsedVal != null) {
                         w = parsedVal;
-                      } else if (v is Map) {
-                        w = double.tryParse(v['watt'].toString()) ?? 0;
-                        a = double.tryParse(v['amp'].toString()) ?? 0;
                       }
                     }
                     if (w > maxW) maxW = w;
@@ -193,7 +188,6 @@ class _WattDashboardPageState extends State<WattDashboardPage> {
                 if (historyList.isNotEmpty) {
                   latestWatt = historyList.last.watt.toStringAsFixed(2);
                   latestAmp  = historyList.last.amp.toStringAsFixed(2);
-                  _latestHistoryWatt = historyList.last.watt;
                   historyList = historyList.reversed.toList();
                 }
               }
