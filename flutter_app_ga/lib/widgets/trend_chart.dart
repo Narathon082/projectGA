@@ -281,13 +281,13 @@ class TrendChart extends StatelessWidget {
           barWidth: 3.0,
           isStrokeCapRound: true,
           dotData: FlDotData(
-            show: chartMode != ChartMode.realtime, // hide dots for real-time scrolling graph
+            show: true,
             checkToShowDot: (spot, barData) => true,
             getDotPainter: (spot, percent, barData, index) {
               return FlDotCirclePainter(
-                radius: 2.5,
-                color: AppColors.surface,
-                strokeWidth: 1.5,
+                radius: 3.0,
+                color: Colors.white,
+                strokeWidth: 2.0,
                 strokeColor: AppColors.primary,
               );
             },
