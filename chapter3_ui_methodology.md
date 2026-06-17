@@ -141,9 +141,10 @@ flowchart TD
     HW_Send --> Firebase[(Firebase Realtime Database)]
     
     App_Start([ฝั่งโมบายแอพพลิเคชัน]) --> App_Init[เริ่มต้น Flutter Engine & เชื่อมต่อ Firebase]
-    App_Init --> Sim_Start[เริ่มระบบจำลองข้อมูลเรียลไทม์ Simulation Engine Fallback]
-    Sim_Start --> Stream[StreamBuilder สมัครรับข้อมูลเรียลไทม์จาก Firebase]
+    App_Init --> Real_Sub[สมัครรับข้อมูลเรียลไทม์ผ่าน Stream Listener _realtimeRef.onValue]
+    Real_Sub --> Stream[StreamBuilder สมัครรับข้อมูลประวัติย้อนหลัง]
     Firebase -.-> Stream
+    Firebase -.-> Real_Sub
     
     Stream --> NavSelect{ผู้ใช้งานเลือกหน้าด้วย Bottom Navigation Bar?}
     
@@ -190,39 +191,26 @@ void main() async {
 }
 ```
 
-#### 3.7.2 ระบบจำลองข้อมูลแบบเรียลไทม์ (Simulation Engine Fallback & Telemetry Integration)
-ภายในคลาส [_WattDashboardPageState](file:///c:/ProjectFlutter/projectGA/flutter_app_ga/lib/graph_page.dart) มีการตั้งตัวจับเวลาเพื่อจำลองข้อมูลแบบเรียลไทม์ขึ้นมาแสดงผลทดแทนอัตโนมัติ ในกรณีที่สัญญาณเชื่อมต่อกับบอร์ดขาดหาย เพื่อป้องกันการค้างของ UI และสร้างความลื่นไหลของพารามิเตอร์พลังงาน:
+#### 3.7.2 การเชื่อมต่อข้อมูลเรียลไทม์จากระบบคลาวด์ (Real-time Cloud Telemetry Integration)
+เพื่อนำเสนอข้อมูลที่ตรงกับการใช้งานทางกายภาพจริงของระบบชาร์จควบคุม ไมโครคอนโทรลเลอร์จะอัปเดตข้อมูลขึ้นตำแหน่งคีย์ `realtime` บน Firebase ทุกครั้งที่มีการเปลี่ยนแปลงค่านัยสำคัญ ตัวแอปพลิเคชันจะสมัครรับข้อมูล (Subscribe) ผ่านสตรีมการรับส่งข้อมูลของคีย์ดังกล่าว เพื่อนำมาแสดงค่าและพล็อตจุดกราฟเส้นในทันที:
 
 ```dart
-// โค้ดส่วนระบบจำลองและควบคุมตัวแปรทางฟิสิกส์ (graph_page.dart)
+// โค้ดส่วนดึงข้อมูลเรียลไทม์จาก Firebase Realtime Database (graph_page.dart)
 void _setupRealtimeData() {
-  _simulationTimer = Timer.periodic(const Duration(seconds: 2), (timer) {
-    setState(() {
-      // ดึงค่ากำลังวัตต์ล่าสุดจากประวัติระบบเพื่อเป็นฐานคำนวณ
-      double basePout = _latestHistoryWatt ?? 8.5;
-      if (basePout <= 0.1) basePout = 8.5;
+  _realtimeSubscription = FirebaseDatabase.instance.ref('realtime').onValue.listen((event) {
+    if (event.snapshot.value != null) {
+      final data = _convertToMap(event.snapshot.value);
+      setState(() {
+        vin = double.tryParse(data['vin']?.toString() ?? '0') ?? 0.0;
+        iin = double.tryParse(data['iin']?.toString() ?? '0') ?? 0.0;
+        pin = double.tryParse(data['pin']?.toString() ?? '0') ?? 0.0;
+        vout = double.tryParse(data['vout']?.toString() ?? '0') ?? 0.0;
+        iout = double.tryParse(data['iout']?.toString() ?? '0') ?? 0.0;
+        pout = double.tryParse(data['pout']?.toString() ?? '0') ?? 0.0;
 
-      final double randomSec = DateTime.now().second.toDouble();
-      final double wave = 0.5 * (1 + (randomSec / 60.0)); // รูปแบบคลื่นสัญญาณจำลอง
-
-      final double randV = (DateTime.now().millisecond % 80 - 40) / 100.0; // ค่าแกว่งแรงดัน +/- 0.4V
-      final double randI = (DateTime.now().millisecond % 60 - 30) / 1000.0; // ค่าแกว่งกระแส +/- 0.03A
-
-      // คำนวณพารามิเตอร์ชาร์จขาออกแบตเตอรี่ (Battery Output)
-      vout = 12.4 + randV;
-      iout = (basePout / vout) * wave + randI;
-      if (iout < 0) iout = 0;
-      pout = vout * iout;
-
-      // คำนวณพารามิเตอร์แผงขาเข้า (Solar Input) โดยอิงตามสัมประสิทธิ์ประสิทธิภาพชาร์จประมาณ 88%-92%
-      vin = 18.2 + randV * 1.5;
-      double efficiency = 0.88 + (DateTime.now().millisecond % 5) / 100.0;
-      pin = pout / efficiency;
-      iin = pin / vin;
-
-      // พล็อตจุดจุดข้อมูลเรียลไทม์ไปยังหน่วยความจำแสดงกราฟเส้น
-      _addRealtimePoint(pout);
-    });
+        _addRealtimePoint(pout);
+      });
+    }
   });
 }
 ```
