@@ -8,12 +8,12 @@ class PowerCard extends StatelessWidget {
   final bool dayView;
 
   const PowerCard({
-    Key? key,
+    super.key,
     required this.watt,
     required this.amp,
     required this.dateStr,
     required this.dayView,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

@@ -5,7 +5,7 @@ class TopBar extends StatelessWidget {
   final bool isDark;
   final VoidCallback onToggleTheme;
 
-  const TopBar({Key? key, required this.isDark, required this.onToggleTheme}) : super(key: key);
+  const TopBar({super.key, required this.isDark, required this.onToggleTheme});
 
   @override
   Widget build(BuildContext context) {

@@ -10,14 +10,14 @@ class InOutPage extends StatelessWidget {
   final double pout;
 
   const InOutPage({
-    Key? key,
+    super.key,
     required this.vin,
     required this.iin,
     required this.pin,
     required this.vout,
     required this.iout,
     required this.pout,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -56,9 +56,9 @@ class InOutPage extends StatelessWidget {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             decoration: BoxDecoration(
-              color: statusColor.withOpacity(0.08),
+              color: statusColor.withValues(alpha: 0.08),
               borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: statusColor.withOpacity(0.3), width: 1),
+              border: Border.all(color: statusColor.withValues(alpha: 0.3), width: 1),
             ),
             child: Row(
               children: [

@@ -3,6 +3,7 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:intl/intl.dart';
 import 'dart:async';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import 'models/energy_data.dart';
 import 'constants/app_colors.dart';
@@ -16,7 +17,7 @@ import 'widgets/bottom_nav.dart';
 import 'in_out_page.dart';
 
 class WattDashboardPage extends StatefulWidget {
-  const WattDashboardPage({Key? key}) : super(key: key);
+  const WattDashboardPage({super.key});
 
   @override
   State<WattDashboardPage> createState() => _WattDashboardPageState();
@@ -24,9 +25,11 @@ class WattDashboardPage extends StatefulWidget {
 
 class _WattDashboardPageState extends State<WattDashboardPage> {
   final DatabaseReference _historyRef = FirebaseDatabase.instance.ref('history');
+  late final Stream<DatabaseEvent> _historyStream;
   
   // Real-time Database references and local state
   StreamSubscription<DatabaseEvent>? _realtimeSubscription;
+  SharedPreferences? _prefs;
 
   double vin = 0.0;
   double iin = 0.0;
@@ -65,7 +68,21 @@ class _WattDashboardPageState extends State<WattDashboardPage> {
   @override
   void initState() {
     super.initState();
+    _historyStream = _historyRef.onValue;
+    AppColors.isDark = _isDark;
+    _loadThemePref();
     _setupRealtimeData();
+  }
+
+  Future<void> _loadThemePref() async {
+    _prefs = await SharedPreferences.getInstance();
+    final savedDark = _prefs?.getBool('isDark') ?? false;
+    if (savedDark != _isDark) {
+      setState(() {
+        _isDark = savedDark;
+        AppColors.isDark = _isDark;
+      });
+    }
   }
 
   @override
@@ -108,12 +125,11 @@ class _WattDashboardPageState extends State<WattDashboardPage> {
 
   @override
   Widget build(BuildContext context) {
-    AppColors.isDark = _isDark;
     return Scaffold(
       backgroundColor: AppColors.bg,
       body: SafeArea(
-        child: StreamBuilder(
-          stream: _historyRef.onValue,
+        child: StreamBuilder<DatabaseEvent>(
+          stream: _historyStream,
           builder: (context, snapshot) {
             List<String> availableDates = [];
             List<FlSpot> spots = [];
@@ -197,7 +213,13 @@ class _WattDashboardPageState extends State<WattDashboardPage> {
               children: [
                 TopBar(
                   isDark: _isDark,
-                  onToggleTheme: () => setState(() => _isDark = !_isDark),
+                  onToggleTheme: () {
+                    setState(() {
+                      _isDark = !_isDark;
+                      AppColors.isDark = _isDark;
+                    });
+                    _prefs?.setBool('isDark', _isDark);
+                  },
                 ),
                 Expanded(
                   child: _navIndex == 0

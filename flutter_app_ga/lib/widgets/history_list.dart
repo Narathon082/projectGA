@@ -7,11 +7,11 @@ class HistoryList extends StatelessWidget {
   final ValueChanged<String> onDateSelected;
 
   const HistoryList({
-    Key? key,
+    super.key,
     required this.dates,
     required this.selectedDate,
     required this.onDateSelected,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

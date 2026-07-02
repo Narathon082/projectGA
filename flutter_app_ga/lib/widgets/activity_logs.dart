@@ -8,11 +8,11 @@ class ActivityLogs extends StatelessWidget {
   final bool dayView;
 
   const ActivityLogs({
-    Key? key,
+    super.key,
     required this.list,
     required this.weekLabels,
     required this.dayView,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -75,7 +75,7 @@ class ActivityLogs extends StatelessWidget {
         border: Border.all(color: AppColors.cardBorder),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.02),
+            color: Colors.black.withValues(alpha: 0.02),
             blurRadius: 4,
             offset: const Offset(0, 2),
           ),

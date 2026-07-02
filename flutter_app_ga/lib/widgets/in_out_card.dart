@@ -10,14 +10,14 @@ class InOutCard extends StatelessWidget {
   final double pout;
 
   const InOutCard({
-    Key? key,
+    super.key,
     required this.vin,
     required this.iin,
     required this.pin,
     required this.vout,
     required this.iout,
     required this.pout,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -29,7 +29,7 @@ class InOutCard extends StatelessWidget {
         border: Border.all(color: AppColors.cardBorder),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.02),
+            color: Colors.black.withValues(alpha: 0.02),
             blurRadius: 6,
             offset: const Offset(0, 3),
           ),

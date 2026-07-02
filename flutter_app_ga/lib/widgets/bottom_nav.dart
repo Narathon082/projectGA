@@ -6,10 +6,10 @@ class BottomNav extends StatelessWidget {
   final ValueChanged<int> onNavChanged;
 
   const BottomNav({
-    Key? key,
+    super.key,
     required this.navIndex,
     required this.onNavChanged,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

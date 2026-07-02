@@ -12,13 +12,13 @@ class TrendChart extends StatelessWidget {
   final ValueChanged<ChartMode> onModeChanged;
 
   const TrendChart({
-    Key? key,
+    super.key,
     required this.spots,
     required this.weekLabels,
     required this.realtimeLabels,
     required this.chartMode,
     required this.onModeChanged,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -99,7 +99,7 @@ class TrendChart extends StatelessWidget {
         border: Border.all(color: AppColors.cardBorder),
         boxShadow: [
           BoxShadow(
-            color: AppColors.primary.withOpacity(0.04),
+            color: AppColors.primary.withValues(alpha: 0.04),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -240,7 +240,7 @@ class TrendChart extends StatelessWidget {
       lineTouchData: LineTouchData(
         handleBuiltInTouches: true,
         touchTooltipData: LineTouchTooltipData(
-          getTooltipColor: (touchedSpot) => AppColors.textDark.withOpacity(0.85),
+          getTooltipColor: (touchedSpot) => AppColors.textDark.withValues(alpha: 0.85),
           tooltipRoundedRadius: 12,
           getTooltipItems: (touchedSpots) {
             return touchedSpots.map((spot) {
@@ -257,7 +257,7 @@ class TrendChart extends StatelessWidget {
                                 ? (weekLabels[spot.x.toInt()].length == 10 ? weekLabels[spot.x.toInt()].substring(5) : weekLabels[spot.x.toInt()])
                                 : ''),
                     style: TextStyle(
-                      color: Colors.white.withOpacity(0.7),
+                      color: Colors.white.withValues(alpha: 0.7),
                       fontSize: 11,
                       fontWeight: FontWeight.normal,
                     ),
@@ -298,8 +298,8 @@ class TrendChart extends StatelessWidget {
               begin: Alignment.topCenter,
               end: Alignment.bottomCenter,
               colors: [
-                AppColors.primary.withOpacity(0.25),
-                AppColors.primary.withOpacity(0.0),
+                AppColors.primary.withValues(alpha: 0.25),
+                AppColors.primary.withValues(alpha: 0.0),
               ],
             ),
           ),
